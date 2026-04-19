@@ -5,6 +5,8 @@
 The backend follows a **feature-based clean architecture** using **FastAPI**.
 It is a **single application** with a **single shared database**, while domains are separated into independent modules.
 
+Current integration decision: **backend interacts with Supabase directly (Supabase-first)**.
+
 Goals:
 
 - high maintainability
@@ -17,9 +19,13 @@ Goals:
 
 - Single FastAPI app
 - Single repository
-- PostgreSQL database
+- Supabase project (managed PostgreSQL + platform services)
 - Multiple feature modules (auth, users, products, orders, etc.)
 - Clean architecture boundaries inside each module
+
+Integration mode selected for this project:
+
+- **Supabase-first**: backend uses Supabase APIs directly (Auth, PostgREST/RPC, Storage)
 
 ---
 
@@ -49,15 +55,15 @@ Each feature is implemented as a vertical slice and contains its own layers:
 
 4. **Infrastructure Layer**
 
-- SQLAlchemy repositories
+- Supabase repository adapters
 - external services (e.g. email, payment)
-- adapters for framework and DB concerns
+- adapters for framework, DB, and Supabase concerns
 
 Dependency rule:
 
 - Outer layers depend on inner layers.
 - Domain layer depends on nothing external.
-- FastAPI and SQLAlchemy stay in presentation/infrastructure only.
+- FastAPI and Supabase SDK usage stay in presentation/infrastructure only.
 
 ---
 
@@ -86,6 +92,7 @@ app/
 │  └─ logging.py
 ├─ db/
 │  ├─ session.py
+│  ├─ supabase_client.py
 │  ├─ base.py
 │  └─ migrations/
 ├─ modules/
@@ -104,7 +111,7 @@ app/
 │  │  │  └─ errors.py
 │  │  └─ infrastructure/
 │  │     ├─ models.py
-│  │     └─ repository_sqlalchemy.py
+│  │     └─ repository_supabase.py
 │  ├─ products/
 │  │  └─ ...
 │  ├─ cart/
@@ -121,7 +128,7 @@ app/
 ## Request Flow
 
 ```txt
-FastAPI Router -> Controller -> Service -> Domain Rules -> Repository Interface -> SQLAlchemy Repository -> PostgreSQL
+FastAPI Router -> Controller -> Service -> Domain Rules -> Repository Interface -> Infrastructure Adapter -> Supabase
 ```
 
 Notes:
@@ -130,7 +137,13 @@ Notes:
 - Controller handles request/response orchestration.
 - Service contains business workflow.
 - Repository interface lives in domain/application boundary.
-- Repository implementation lives in infrastructure.
+- Repository implementation lives in infrastructure (`repository_supabase.py`).
+
+Supabase-first flow:
+
+```txt
+FastAPI Router -> Controller -> Service -> Repository Interface -> Supabase Adapter -> Supabase API (PostgREST/RPC) -> Supabase Postgres
+```
 
 ### Where Are Controller and Service?
 
@@ -196,6 +209,7 @@ Rules:
 Responsibilities:
 
 - DB models and queries
+- Supabase client integration (Auth, PostgREST/RPC, Storage)
 - mapping between DB models and domain entities
 - external integrations
 
@@ -205,12 +219,43 @@ Rules:
 
 ---
 
-## Database Strategy (Single DB)
+## Supabase Integration Strategy
 
-- One PostgreSQL database for all modules
+### Recommended Default
+
+- Keep current clean architecture boundaries unchanged.
+- Add Supabase adapters in feature infrastructure.
+- Keep repository interfaces stable, and swap implementation via dependency wiring.
+
+### Data Access Mode
+
+1. **Supabase-first (selected)**
+
+- Backend reads/writes through Supabase API adapters.
+- Aligns with Supabase Auth, RLS, Storage, Realtime, and Edge functions.
+- No direct SQL path in application feature repositories.
+
+### Auth and RLS Boundaries
+
+- If using Supabase Auth, Supabase is the identity provider.
+- Backend validates Supabase JWT and maps claims/roles to domain authorization rules.
+- Never expose service role key to frontend.
+- Service role key is backend-only for trusted operations.
+- For per-user policy enforcement, run queries in user context (JWT-based) so RLS is applied as designed.
+
+### Migration Ownership (Important)
+
+- Supabase migration workflow is the source of truth for schema evolution.
+- Do not run a parallel independent Alembic migration stream.
+
+---
+
+## Database Strategy (Single DB via Supabase)
+
+- One Supabase-managed PostgreSQL database for all modules
 - Module tables are separated by naming convention (or schema if needed)
 - Foreign keys allowed across modules when required
-- Migrations are centralized (Alembic)
+- Migrations are centralized using Supabase migration workflow
 - Keep strong constraints and indexes in DB
 
 ---
@@ -307,11 +352,13 @@ class UserRepository(ABC):
 
 ## Practical Rules for This Project
 
-- Keep one FastAPI app and one DB until clear scaling pressure exists.
+- Keep one FastAPI app and one Supabase project until clear scaling pressure exists.
 - Separate by feature module, not by technical layer at root level.
-- Do not let routers call SQLAlchemy directly.
+- Do not let routers call Supabase directly.
 - Do not put HTTP concerns inside services/domain.
 - Expose each module through its own router and register in `main.py`.
+- Keep Supabase keys and URLs in environment variables and centralized config.
+- Keep all feature data access behind repository interfaces implemented by Supabase adapters.
 
 ---
 
