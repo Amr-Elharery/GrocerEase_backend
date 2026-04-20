@@ -1,0 +1,17 @@
+from app.core.exceptions import AppException, UnauthorizedException
+from fastapi import status
+
+
+class InvalidCredentialsError(UnauthorizedException):
+    def __init__(self) -> None:
+        super().__init__("Invalid email or password")
+
+
+class EmailAlreadyRegisteredError(AppException):
+    def __init__(self) -> None:
+        super().__init__("Email is already registered", status.HTTP_409_CONFLICT)
+
+
+class InvalidRefreshTokenError(UnauthorizedException):
+    def __init__(self) -> None:
+        super().__init__("Invalid or expired refresh token")
