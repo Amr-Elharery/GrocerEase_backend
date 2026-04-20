@@ -1,8 +1,8 @@
 from supabase_auth.errors import AuthApiError
 from supabase import Client
 
-from app.modules.auth.domain.errors import EmailAlreadyRegisteredError, InvalidCredentialsError, InvalidTokenError
-from app.modules.auth.presentation.schemas import RegisterResponse,GeneralResponse
+from app.modules.auth.domain.errors import EmailAlreadyRegisteredError, EmailNotVerifiedError, InvalidCredentialsError, InvalidTokenError
+from app.modules.auth.presentation.schemas import AuthResponse,GeneralResponse
 
 
 class AuthService:
@@ -11,7 +11,7 @@ class AuthService:
         self.client = admin_client
         self._anon = anon_client
 
-    def register(self, email: str, password: str, full_name: str) -> RegisterResponse:
+    def register(self, email: str, password: str, full_name: str) -> AuthResponse:
         response = self.client.auth.sign_up(
             {"email": email, "password": password, "options": {"data": {"full_name": full_name}}}
         )
@@ -20,13 +20,35 @@ class AuthService:
 
         session = response.session
         if session:
-            return RegisterResponse(
+            return AuthResponse(
                 message="Registration successful",
                 access_token=session.access_token,
                 refresh_token=session.refresh_token,
             )
-        return RegisterResponse(message="Registration successful. Please verify your email.")
+        return AuthResponse(message="Registration successful. Please verify your email.")
 
+    def login(self,email:str,password:str)->AuthResponse:
+       try:
+        response = self.client.auth.sign_in_with_password({"email":email,"password":password})
+        
+       except AuthApiError as e:
+           if "Email not confirmed" in str(e):
+               raise EmailNotVerifiedError()
+           raise InvalidCredentialsError()
+               
+       if response.user is None:
+            raise InvalidCredentialsError()
+        
+       session = response.session
+       if session:
+            return AuthResponse(
+                message="Login Successful",
+                access_token=session.access_token,
+                refresh_token=session.refresh_token
+            )
+       raise  EmailNotVerifiedError()   
+            
+        
     def change_password(self, user_id: str, user_email: str, current_password: str, new_password: str) -> GeneralResponse:
         try:
             sign_in_response = self._anon.auth.sign_in_with_password({"email": user_email, "password": current_password})

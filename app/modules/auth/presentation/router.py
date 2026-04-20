@@ -6,8 +6,9 @@ from app.modules.auth.presentation.controller import AuthController
 from app.modules.auth.presentation.schemas import (
     ChangePasswordRequest,
     ForgotPasswordRequest,
+    LoginRequest,
     RegisterRequest,
-    RegisterResponse,
+    AuthResponse,
     ResetPasswordRequest,
 )
 
@@ -18,10 +19,13 @@ def _get_controller() -> AuthController:
     return AuthController(AuthService(get_admin_client(), get_anon_client()))
 
 
-@router.post("/register", response_model=RegisterResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
 def register(payload: RegisterRequest, controller: AuthController = Depends(_get_controller)):
     return controller.register(payload)
 
+@router.post("/login",response_model=AuthResponse,status_code=status.HTTP_200_OK)
+def login(payload:LoginRequest,controller: AuthController = Depends(_get_controller)):
+    return controller.login(payload)
 
 @router.post("/change-password", status_code=status.HTTP_200_OK)
 def change_password(payload: ChangePasswordRequest, controller: AuthController = Depends(_get_controller)):
