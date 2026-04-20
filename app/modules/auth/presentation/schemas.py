@@ -1,0 +1,21 @@
+from pydantic import BaseModel, EmailStr, model_validator
+
+
+class RegisterRequest(BaseModel):
+    email: EmailStr
+    password: str
+    confirmPassword: str
+    full_name: str
+
+    @model_validator(mode="after") # Used Model Validator for checking the matching between password and confirmpassword
+    def passwords_match(self) -> "RegisterRequest":
+        if self.password != self.confirmPassword:
+            raise ValueError("Passwords do not match")
+        return self
+
+
+
+class RegisterResponse(BaseModel):
+    message: str
+    access_token: str | None = None
+    refresh_token: str | None = None
