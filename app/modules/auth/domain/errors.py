@@ -11,6 +11,9 @@ class EmailAlreadyRegisteredError(AppException):
     def __init__(self) -> None:
         super().__init__("Email is already registered", status.HTTP_409_CONFLICT)
 
+class EmailNotVerifiedError(AppException):
+    def __init__(self) -> None:
+        super().__init__("Email is not verified", status.HTTP_403_FORBIDDEN)
 
 class InvalidRefreshTokenError(UnauthorizedException):
     def __init__(self) -> None:

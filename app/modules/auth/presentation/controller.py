@@ -3,8 +3,9 @@ from app.modules.auth.presentation.schemas import (
     ChangePasswordRequest,
     ForgotPasswordRequest,
     GeneralResponse,
+    LoginRequest,
+    AuthResponse,
     RegisterRequest,
-    RegisterResponse,
     ResetPasswordRequest,
 )
 
@@ -13,9 +14,11 @@ class AuthController:
     def __init__(self, service: AuthService) -> None:
         self.service = service
 
-    def register(self, payload: RegisterRequest) -> RegisterResponse:
+    def register(self, payload: RegisterRequest) -> AuthResponse:
         return self.service.register(payload.email, payload.password, payload.full_name)
 
+    def login(self,payload:LoginRequest)->AuthResponse:
+        return self.service.login(payload.email,payload.password)
     def change_password(self, payload: ChangePasswordRequest) -> GeneralResponse:
        return  self.service.change_password(payload.user_id, payload.user_email, payload.current_password, payload.new_password)
 

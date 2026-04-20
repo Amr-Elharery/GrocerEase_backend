@@ -13,9 +13,13 @@ class RegisterRequest(BaseModel):
             raise ValueError("Passwords do not match")
         return self
 
+class LoginRequest(BaseModel):
+        email:EmailStr
+        password:str
 
 
-class RegisterResponse(BaseModel):
+
+class AuthResponse(BaseModel):
     message: str
     access_token: str | None = None
     refresh_token: str | None = None
