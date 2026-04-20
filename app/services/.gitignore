@@ -1,18 +1,13 @@
 # Virtual Environment
-venv/
-.env
+../venv/
+
 # Python cache
 __pycache__/
 *.pyc
-*.pyo
 
 # Database
-*.db
+../app/test.db
 
 # IDE
 .vscode/
 .idea/
-
-# OS
-.DS_Store
-Thumbs.db
