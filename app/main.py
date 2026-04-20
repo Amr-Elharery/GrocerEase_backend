@@ -7,7 +7,7 @@ from app.core.logging import configure_logging
 from app.modules.auth.presentation.router import router as auth_router
 
 
-Base.metadata.create_all(bind=engine)
+# Base.metadata.create_all(bind=engine)
 
 configure_logging()
 

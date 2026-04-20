@@ -19,3 +19,22 @@ class RegisterResponse(BaseModel):
     message: str
     access_token: str | None = None
     refresh_token: str | None = None
+
+
+class ChangePasswordRequest(BaseModel):
+    user_id: str
+    user_email: EmailStr
+    current_password: str
+    new_password: str
+
+
+    
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+class GeneralResponse(BaseModel):
+    message:str
+
+class ResetPasswordRequest(BaseModel):
+    access_token: str
+    new_password: str
