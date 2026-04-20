@@ -1,4 +1,4 @@
--- Initial schema for GrocerEase
+-- Initial schema for ZAD
 -- Run via Supabase dashboard or CLI: supabase db push
 
 -- User profiles (extends Supabase auth.users)

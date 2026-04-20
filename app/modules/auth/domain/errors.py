@@ -15,3 +15,8 @@ class EmailAlreadyRegisteredError(AppException):
 class InvalidRefreshTokenError(UnauthorizedException):
     def __init__(self) -> None:
         super().__init__("Invalid or expired refresh token")
+
+
+class InvalidTokenError(UnauthorizedException):
+    def __init__(self) -> None:
+        super().__init__("Invalid or expired reset token")
