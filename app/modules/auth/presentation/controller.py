@@ -19,8 +19,9 @@ class AuthController:
 
     def login(self,payload:LoginRequest)->AuthResponse:
         return self.service.login(payload.email,payload.password)
-    def change_password(self, payload: ChangePasswordRequest) -> GeneralResponse:
-       return  self.service.change_password(payload.user_id, payload.user_email, payload.current_password, payload.new_password)
+    
+    def change_password(self, user_id: str, user_email: str,payload: ChangePasswordRequest) -> GeneralResponse:
+       return  self.service.change_password(user_id, user_email, payload.current_password, payload.new_password)
 
     def forgot_password(self, payload: ForgotPasswordRequest) -> GeneralResponse:
        return  self.service.forgot_password(payload.email)

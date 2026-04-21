@@ -26,8 +26,6 @@ class AuthResponse(BaseModel):
 
 
 class ChangePasswordRequest(BaseModel):
-    user_id: str
-    user_email: EmailStr
     current_password: str
     new_password: str
 
