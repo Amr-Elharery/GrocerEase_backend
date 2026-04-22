@@ -11,6 +11,7 @@ from app.modules.auth.presentation.schemas import (
     RegisterRequest,
     AuthResponse,
     ResetPasswordRequest,
+    UpdateProfileRequest,
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -45,3 +46,8 @@ def forgot_password(payload: ForgotPasswordRequest, controller: AuthController =
 @router.post("/reset-password", status_code=status.HTTP_200_OK)
 def reset_password(payload: ResetPasswordRequest, controller: AuthController = Depends(_get_controller)):
     return controller.reset_password(payload)
+
+@router.put("/profile",status_code=status.HTTP_200_OK)
+def update_user_profile(payload:UpdateProfileRequest,controller: AuthController = Depends(_get_controller),user= Depends(get_current_user)):
+    return controller.update_user_profile(user.id,payload)
+    
