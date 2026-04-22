@@ -1,8 +1,8 @@
 from supabase_auth.errors import AuthApiError
 from supabase import Client
 
-from app.modules.auth.domain.errors import EmailAlreadyRegisteredError, EmailNotVerifiedError, InvalidCredentialsError, InvalidTokenError
-from app.modules.auth.presentation.schemas import AuthResponse,GeneralResponse
+from app.modules.auth.domain.errors import EmailAlreadyRegisteredError, EmailNotVerifiedError, InvalidCredentialsError, InvalidTokenError, PhoneAlreadyInUseError
+from app.modules.auth.presentation.schemas import AuthResponse,GeneralResponse, UpdateProfileResponse
 
 
 class AuthService:
@@ -64,8 +64,6 @@ class AuthService:
         except AuthApiError:
             raise InvalidCredentialsError()
 
-        
-        
 
     def forgot_password(self, email: str) -> None:
         self.client.auth.reset_password_for_email(email)
@@ -80,3 +78,22 @@ class AuthService:
         self.client.auth.admin.update_user_by_id(user_response.user.id, {"password": new_password})
         return GeneralResponse(message="Password reseted Successfully")
             
+
+    def update_user_profile(self,user_id:str,user_full_name:str |None ,user_phone:str | None)->UpdateProfileResponse:
+        payload = {}
+        if user_full_name is not None:
+            payload["user_metadata"] = {"full_name": user_full_name}
+        if user_phone is not None:
+            payload["phone"] = user_phone
+        try:
+            
+            response = self.client.auth.admin.update_user_by_id(user_id,payload)
+        
+        except AuthApiError as e:
+            if "already" in str(e).lower() or "phone" in str(e).lower():
+                raise PhoneAlreadyInUseError
+            raise    
+        
+        return UpdateProfileResponse(full_name=response.user.user_metadata.get("full_name"),
+        phone= response.user.phone)
+        

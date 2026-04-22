@@ -23,3 +23,7 @@ class InvalidRefreshTokenError(UnauthorizedException):
 class InvalidTokenError(UnauthorizedException):
     def __init__(self) -> None:
         super().__init__("Invalid or expired reset token")
+
+class PhoneAlreadyInUseError(AppException):
+        def __init__(self)->None:
+            super().__init__("Phone already used before")

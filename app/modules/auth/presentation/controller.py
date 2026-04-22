@@ -7,6 +7,8 @@ from app.modules.auth.presentation.schemas import (
     AuthResponse,
     RegisterRequest,
     ResetPasswordRequest,
+    UpdateProfileRequest,
+    UpdateProfileResponse,
 )
 
 
@@ -28,3 +30,6 @@ class AuthController:
 
     def reset_password(self, payload: ResetPasswordRequest) -> GeneralResponse:
       return self.service.reset_password(payload.access_token, payload.new_password)
+  
+    def update_user_profile(self,user_id:str,payload:UpdateProfileRequest)->UpdateProfileResponse:
+        return self.service.update_user_profile(user_id,payload.full_name,payload.phone)
