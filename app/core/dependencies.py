@@ -4,10 +4,11 @@ from app.db.supabase_client import get_admin_client
 
 _bearer = HTTPBearer()
 
-def get_current_user(credentials:HTTPAuthorizationCredentials = Depends(_bearer)):
+async def get_current_user(credentials:HTTPAuthorizationCredentials = Depends(_bearer)):
     token = credentials.credentials
     try:
-        response = get_admin_client().auth.get_user(token)
+        client = await get_admin_client()
+        response = await client.auth.get_user(token)
         if response.user is None:
           raise ValueError
     except Exception:
