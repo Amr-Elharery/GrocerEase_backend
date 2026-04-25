@@ -5,6 +5,7 @@ from app.core.config import settings
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import configure_logging
 from app.modules.auth.presentation.router import router as auth_router
+from app.modules.products.presentation.router import router as products_router
 
 
 # Base.metadata.create_all(bind=engine)
@@ -28,7 +29,7 @@ app.add_middleware(
 register_exception_handlers(app)
 
 app.include_router(auth_router, prefix="/api/v1")
-
+app.include_router(products_router, prefix="/api/v1")
 
 @app.get("/health", tags=["health"])
 def health_check() -> dict:
