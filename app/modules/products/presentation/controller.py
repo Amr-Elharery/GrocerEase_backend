@@ -1,6 +1,9 @@
 from app.modules.products.application.services.products_service import ProductsService
 from app.modules.products.presentation.schemas import (
+    CategoryResponse,
+    CreateCategoryRequest,
     CreateProductRequest,
+    CreateSubCategoryRequest,
     UpdateProductRequest,
     ProductResponse,
     ProductListResponse,
@@ -25,3 +28,15 @@ class ProductsController:
 
     async def delete_product(self, product_id: str) -> None:
         pass
+    
+    async def create_category(self, payload:CreateCategoryRequest)->CategoryResponse:
+        return await self.service.create_category(payload.category_name)
+    
+    async def get_all_categories(self)->list[CategoryResponse]:
+        return await self.service.get_all_categories()
+
+    async def create_subcategory(self,payload:CreateCategoryRequest,parent_id:int)->CategoryResponse:
+        return await self.service.create_subcategory(payload.category_name,parent_id)
+    
+    async def delete_category(self,category_id)->None:
+        return await self.service.delete_category(category_id)
