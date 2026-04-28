@@ -7,10 +7,13 @@ from app.modules.products.presentation.schemas import (
     CategoryItem,
     CategoryResponse,
     CreateProductRequest,
+    CreateShopProductRequest,
+    ShopProductItem,
     SuccessResponse,
     UpdateProductRequest,
     ProductResponse,
     ProductListResponse,
+    UpdateShopProductRequest,
 )
 
 
@@ -102,5 +105,21 @@ class ProductsService:
         pass
 
 
-                
-                
+    async def create_shop_product(self,shop_id:int,payload:CreateShopProductRequest)->ShopProductItem:
+        try:
+             result = await self.client.from_("shop_product").insert({"shop_id":shop_id,"product_id":payload.product_id,"available_stock":payload.available_stock,"low_stock_threshold":payload.low_stock_threshold,"price":payload.price,"is_active":payload.is_active}).execute()
+        except Exception as e:
+            raise AppException(f"Failed Inserting shop product {str(e)}",status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        response = result.data[0]
+        return ShopProductItem(id=response["id"],shop_id=shop_id,product_id=response["product_id"],available_stock=response["available_stock"],low_stock_threshold=response["low_stock_threshold"],price=response["price"],is_active=response["is_active"])           
+    
+    async def update_shop_product(self,shop_id:int,product_id,payload:UpdateShopProductRequest)->ShopProductItem:
+        try:
+            result = await self.client.from_("shop_product").update({"available_stock":payload.available_stock,"low_stock_threshold":payload.low_stock_threshold,"price":payload.price,"is_active":payload.is_active}).eq("shop_id",shop_id).eq("product_id",product_id).execute()
+        except Exception as e:
+            raise AppException(f"Failed Updating shop product {str(e)}",status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        response = result.data[0]
+        return ShopProductItem(id=response["id"],shop_id=shop_id,product_id=response["product_id"],available_stock=response["available_stock"],low_stock_threshold=response["low_stock_threshold"],price=response["price"],is_active=response["is_active"])    
+            

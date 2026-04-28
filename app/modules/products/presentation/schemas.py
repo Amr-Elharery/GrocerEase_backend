@@ -35,3 +35,25 @@ class CategoryResponse(BaseModel):
 class SuccessResponse(BaseModel):
     success:bool | None = False
     message:str | None=None   
+    
+class CreateShopProductRequest(BaseModel):
+    product_id:int
+    available_stock:int
+    low_stock_threshold: int
+    price:float
+    is_active:bool | None = True
+    
+class UpdateShopProductRequest(BaseModel):
+    available_stock:int
+    low_stock_threshold: int
+    price:float
+    is_active:bool
+        
+class ShopProductItem(BaseModel):
+    id:int
+    shop_id:int
+    product_id:int
+    available_stock:int
+    low_stock_threshold: int
+    price:float
+    is_active:bool

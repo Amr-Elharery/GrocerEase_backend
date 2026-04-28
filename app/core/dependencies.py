@@ -23,6 +23,15 @@ async def require_admin(user=Depends(get_current_user)):
     if "admin" not in roles:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
     return user
+
+async def require_vendor(user= Depends(get_current_user)):
+    client = await get_admin_client()
+    result = await client.from_("users_roles").select("roles(role_name)").eq("user_id",user.id).execute()
+    
+    roles = [r["roles"]["role_name"] for r in result.data if r.get("roles")]
+    if "vendor" not in roles:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    return user
 # from core.database import SessionLocal
 # from models.user import User
 # from fastapi import HTTPException, Depends

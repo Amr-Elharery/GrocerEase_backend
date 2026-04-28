@@ -3,10 +3,13 @@ from app.modules.products.presentation.schemas import (
     CategoryResponse,
     CreateCategoryRequest,
     CreateProductRequest,
+    CreateShopProductRequest,
     CreateSubCategoryRequest,
+    ShopProductItem,
     UpdateProductRequest,
     ProductResponse,
     ProductListResponse,
+    UpdateShopProductRequest,
 )
 
 
@@ -40,3 +43,9 @@ class ProductsController:
     
     async def delete_category(self,category_id)->None:
         return await self.service.delete_category(category_id)
+    
+    async def create_shop_product(self,shop_id:int,payload:CreateShopProductRequest)->ShopProductItem:
+        return await self.service.create_shop_product(shop_id,payload)
+    
+    async def update_shop_product(self,shop_id:int,product_id,payload:UpdateShopProductRequest)->ShopProductItem:
+        return await self.service.update_shop_product(shop_id,product_id,payload)
