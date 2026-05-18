@@ -4,15 +4,19 @@ from pydantic import BaseModel
 class CreateProductRequest(BaseModel):
     product_name: str
     category_id: int
+    sub_category_id: int | None = None
     description: str | None = None
+    brand: str | None = None
+    unit: str | None = None
 
 
-class UpdateProductRequest(BaseModel):
+class UpdateProductRequest(CreateProductRequest):
     pass
 
 
 class ProductResponse(BaseModel):
-    pass
+    product_name: str
+    category_id: int
 
 
 class ProductListResponse(BaseModel):
