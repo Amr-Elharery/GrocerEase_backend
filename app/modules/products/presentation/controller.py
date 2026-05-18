@@ -1,9 +1,7 @@
+from fastapi import Depends
 from app.modules.products.application.services.products_service import ProductsService
 from app.modules.products.presentation.schemas import (
-    CategoryResponse,
-    CreateCategoryRequest,
     CreateProductRequest,
-    CreateSubCategoryRequest,
     UpdateProductRequest,
     ProductResponse,
     ProductListResponse,
@@ -11,32 +9,31 @@ from app.modules.products.presentation.schemas import (
 
 
 class ProductsController:
-    def __init__(self, service: ProductsService) -> None:
+    def __init__(self, service: ProductsService = Depends(ProductsService)) -> None:
         self.service = service
 
+    async def get_all_products(self, limit: int = 10, offset: int = 0, search: str = None):
+        try:
+            return await self.service.get_all_products(limit, offset, search)
+        except Exception as e:
+            return e
     async def create_product(self, payload: CreateProductRequest) -> ProductResponse:
-        pass
+        try:
+            return await self.service.create_product(payload)
+        except Exception as e:
+            return e
 
     async def get_product(self, product_id: str) -> ProductResponse:
-        pass
-
-    async def get_all_products(self) -> ProductListResponse:
-        pass
+        try:
+            return await self.service.get_product(product_id)
+        except Exception as e:
+            return e
 
     async def update_product(self, product_id: str, payload: UpdateProductRequest) -> ProductResponse:
         pass
 
     async def delete_product(self, product_id: str) -> None:
-        pass
-    
-    async def create_category(self, payload:CreateCategoryRequest)->CategoryResponse:
-        return await self.service.create_category(payload.category_name)
-    
-    async def get_all_categories(self)->list[CategoryResponse]:
-        return await self.service.get_all_categories()
-
-    async def create_subcategory(self,payload:CreateCategoryRequest,parent_id:int)->CategoryResponse:
-        return await self.service.create_subcategory(payload.category_name,parent_id)
-    
-    async def delete_category(self,category_id)->None:
-        return await self.service.delete_category(category_id)
+        try:
+            await self.service.delete_product(product_id)
+        except Exception as e:
+            return e
