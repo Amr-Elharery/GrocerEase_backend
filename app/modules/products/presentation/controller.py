@@ -1,4 +1,5 @@
 from fastapi import Depends, UploadFile
+from typing import List
 from app.modules.products.application.services.products_service import ProductsService
 from app.modules.products.presentation.schemas import (
     CreateProductRequest,
@@ -17,9 +18,9 @@ class ProductsController:
         except Exception as e:
             raise e
 
-    async def create_product(self, payload: CreateProductRequest, file: UploadFile = None) -> ProductResponse:
+    async def create_product(self, payload: CreateProductRequest, files: List[UploadFile] = None) -> ProductResponse:
         try:
-            return await self.service.create_product(payload, file)
+            return await self.service.create_product(payload, files)
         except Exception as e:
             raise e
 

@@ -49,7 +49,7 @@ class ProductsRepositorySupabase:
       print(f"Creating product image for product_id={product_id} with image_url={image_url}")
       try:
         payload = {"product_id": product_id, "image_url": image_url, "variant": variant, "is_primary": is_primary}
-        response = await self.client.from_("product_image").insert(payload).execute()
+        response = await self.client.from_("product_images").insert(payload).execute()
         return response.data
       except Exception as e:
         print(f"Error creating product image: {e}")

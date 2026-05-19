@@ -2,6 +2,7 @@ from app.modules.products.infrastructure.products_repository_supabase import Pro
 from app.modules.products.application.ports import ImageStorage
 from app.modules.products.infrastructure.storage_supabase import SupabaseImageStorage
 from fastapi import Depends, UploadFile
+from typing import List
 
 
 class ProductsService:
@@ -15,17 +16,23 @@ class ProductsService:
         except Exception as e:
             return e
 
-    async def create_product(self, payload, file: UploadFile = None):
+    async def create_product(self, payload, files: List[UploadFile] = None):
         try:
             created = await self.repository.create_product(payload.dict())
 
             product = created[0]
 
             # if file and product created, save image and create product_img record
-            if file and product and product.get("id"):
-                image_url = await self.storage.save(file)
-                img = await self.repository.create_product_image(product.get("id"), image_url, variant=None, is_primary=True)
-                product["images"] = img
+            if files and product and product.get("id"):
+                images = []
+                for f in files:
+                    image_url = await self.storage.save(f)
+                    img = await self.repository.create_product_image(product.get("id"), image_url, variant=None, is_primary=False)
+                    images.append(img)
+                # mark the first image as primary if none already
+                if images:
+                    images[0][0]["is_primary"] = True
+                product["images"] = images
 
             return product
         except Exception as e:

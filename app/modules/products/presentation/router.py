@@ -33,10 +33,10 @@ async def get_product(product_id: str, controller: ProductsController = Depends(
         raise ProductsError(str(e))
 
 
-@router.post("/", response_model=ProductResponse, status_code=status.HTTP_201_CREATED)
-async def create_product(file: UploadFile = File(), payload: CreateProductRequest = Depends(CreateProductRequestAsForm), controller: ProductsController = Depends(ProductsController)):
+@router.post("/", status_code=status.HTTP_201_CREATED)
+async def create_product(files: List[UploadFile] = File(), payload: CreateProductRequest = Depends(CreateProductRequestAsForm), controller: ProductsController = Depends(ProductsController)):
     try:
-        return await controller.create_product(payload, file)
+        return await controller.create_product(payload, files)
     except Exception as e:
         raise ProductsError(str(e))
 
