@@ -30,9 +30,21 @@ class ProductsController:
         except Exception as e:
             raise e
 
-    async def update_product(self, product_id: str, payload: UpdateProductRequest) -> ProductResponse:
+    async def update_product(self, product_id: int, payload: UpdateProductRequest, files: List[UploadFile] = None) -> ProductResponse:
         try:
-            return await self.service.update_product(product_id, payload)
+            return await self.service.update_product(product_id, payload, files)
+        except Exception as e:
+            raise e
+
+    async def delete_product_image(self, product_id: str, image_id: int) -> None:
+        try:
+            await self.service.delete_product_image(product_id, image_id)
+        except Exception as e:
+            raise e
+
+    async def make_primary_image(self, product_id: str, image_id: int) -> None:
+        try:
+            await self.service.make_primary_image(product_id, image_id)
         except Exception as e:
             raise e
 

@@ -14,10 +14,6 @@ from app.modules.products.domain.errors import ProductsError
 
 router = APIRouter(prefix="/products", tags=["products"])
 
-# TODO: Remove
-def _get_controller() -> ProductsController:
-    return ProductsController()
-
 @router.get("/", response_model=List[ProductResponse], status_code=status.HTTP_200_OK)
 async def get_all_products(limit: int = 10, offset: int = 0, search: str = None ,controller: ProductsController = Depends(ProductsController)):
     try:
@@ -42,16 +38,32 @@ async def create_product(files: List[UploadFile] = File(), payload: CreateProduc
 
 
 @router.put("/{product_id}", response_model=ProductResponse, status_code=status.HTTP_200_OK)
-async def update_product(product_id: str, payload: UpdateProductRequest, controller: ProductsController = Depends(_get_controller), user=Depends(get_current_user)):
+async def update_product(product_id: int, files: List[UploadFile] = File(None), payload: UpdateProductRequest = Depends(CreateProductRequestAsForm), controller: ProductsController = Depends(ProductsController)):
     try:
-        return await controller.update_product(product_id, payload)
+        return await controller.update_product(product_id, payload, files)
     except Exception as e:
         raise ProductsError(str(e))
 
+@router.delete("/{product_id}/images/{image_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_product_image(product_id: str, image_id: int, controller: ProductsController = Depends(ProductsController)):
+    try:
+        await controller.delete_product_image(product_id, image_id)
+        return {"message": "Image deleted successfully"}
+    except Exception as e:
+        raise ProductsError(str(e))
+
+@router.post("/{product_id}/images/{image_id}/make-primary", status_code=status.HTTP_204_NO_CONTENT)
+async def make_primary_image(product_id: int, image_id: int, controller: ProductsController = Depends(ProductsController)):
+    try:
+        await controller.make_primary_image(product_id, image_id)
+        return {"message": "Primary image updated successfully"}
+    except Exception as e:
+        raise ProductsError(str(e))
 
 @router.delete("/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_product(product_id: str, controller: ProductsController = Depends(ProductsController)):
     try:
         await controller.delete_product(product_id)
+        return {"message": "Product deleted successfully"}
     except Exception as e:
         raise ProductsError(str(e))

@@ -26,8 +26,7 @@ class ProductsService:
             if files and product and product.get("id"):
                 images = []
                 for f in files:
-                    image_url = await self.storage.save(f)
-                    img = await self.repository.create_product_image(product.get("id"), image_url, variant=None, is_primary=False)
+                    img = await self.create_product_image(product["id"], f)
                     images.append(img)
                 # mark the first image as primary if none already
                 if images:
@@ -38,15 +37,47 @@ class ProductsService:
         except Exception as e:
             return e
 
+    async def create_product_image(self, product_id: str, file: UploadFile, variant: str = None, is_primary: bool = False):
+        try:
+            image_url = await self.storage.save(file)
+            img = await self.repository.create_product_image(product_id, image_url, variant, is_primary)
+            return img
+        except Exception as e:
+            raise e
+
+    async def delete_product_image(self, product_id: str, image_id: int):
+        try:
+            image_path = await self.repository.get_product_image_path(image_id)
+            await self.repository.delete_product_image(product_id, image_id)
+            await self.storage.delete(image_path)
+        except Exception as e:
+            raise e
+
+    async def make_primary_image(self, product_id: str, image_id: int):
+        try:
+            await self.repository.make_primary_image(product_id, image_id)
+        except Exception as e:
+            raise e
+
     async def get_product(self, product_id: str):
         try:
             return await self.repository.get_product(product_id)
         except Exception as e:
             raise e
 
-    async def update_product(self, product_id: str, payload):
+    async def update_product(self, product_id: int, payload, files: List[UploadFile] = None):
         try:
-            return await self.repository.update_product(product_id, payload.dict())
+            product = await self.repository.update_product(product_id, payload.dict())
+            if files and product and product.get("id"):
+                images = []
+                for f in files:
+                    img = await self.create_product_image(product["id"], f)
+                    images.append(img)
+                # mark the first image as primary if none already
+                if images:
+                    images[0][0]["is_primary"] = True
+                product["images"] = images
+            return product
         except Exception as e:
             raise e
 
