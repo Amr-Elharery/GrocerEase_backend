@@ -1,42 +1,55 @@
+from fastapi import Depends, UploadFile
+from typing import List
 from app.modules.products.application.services.products_service import ProductsService
 from app.modules.products.presentation.schemas import (
-    CategoryResponse,
-    CreateCategoryRequest,
     CreateProductRequest,
-    CreateSubCategoryRequest,
     UpdateProductRequest,
     ProductResponse,
-    ProductListResponse,
 )
 
 
 class ProductsController:
-    def __init__(self, service: ProductsService) -> None:
+    def __init__(self, service: ProductsService = Depends(ProductsService)) -> None:
         self.service = service
 
-    async def create_product(self, payload: CreateProductRequest) -> ProductResponse:
-        pass
+    async def get_all_products(self, limit: int = 10, offset: int = 0, search: str = None):
+        try:
+            return await self.service.get_all_products(limit, offset, search)
+        except Exception as e:
+            raise e
+
+    async def create_product(self, payload: CreateProductRequest, files: List[UploadFile] = None) -> ProductResponse:
+        try:
+            return await self.service.create_product(payload, files)
+        except Exception as e:
+            raise e
 
     async def get_product(self, product_id: str) -> ProductResponse:
-        pass
+        try:
+            return await self.service.get_product(product_id)
+        except Exception as e:
+            raise e
 
-    async def get_all_products(self) -> ProductListResponse:
-        pass
+    async def update_product(self, product_id: int, payload: UpdateProductRequest, files: List[UploadFile] = None) -> ProductResponse:
+        try:
+            return await self.service.update_product(product_id, payload, files)
+        except Exception as e:
+            raise e
 
-    async def update_product(self, product_id: str, payload: UpdateProductRequest) -> ProductResponse:
-        pass
+    async def delete_product_image(self, product_id: str, image_id: int) -> None:
+        try:
+            await self.service.delete_product_image(product_id, image_id)
+        except Exception as e:
+            raise e
+
+    async def make_primary_image(self, product_id: str, image_id: int) -> None:
+        try:
+            await self.service.make_primary_image(product_id, image_id)
+        except Exception as e:
+            raise e
 
     async def delete_product(self, product_id: str) -> None:
-        pass
-    
-    async def create_category(self, payload:CreateCategoryRequest)->CategoryResponse:
-        return await self.service.create_category(payload.category_name)
-    
-    async def get_all_categories(self)->list[CategoryResponse]:
-        return await self.service.get_all_categories()
-
-    async def create_subcategory(self,payload:CreateCategoryRequest,parent_id:int)->CategoryResponse:
-        return await self.service.create_subcategory(payload.category_name,parent_id)
-    
-    async def delete_category(self,category_id)->None:
-        return await self.service.delete_category(category_id)
+        try:
+            await self.service.delete_product(product_id)
+        except Exception as e:
+            raise e

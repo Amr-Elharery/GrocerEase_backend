@@ -1,15 +1,12 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import configure_logging
 from app.modules.auth.presentation.router import router as auth_router
-from app.modules.products.presentation.router import router as products_router,categories_router
-
-
-
-# Base.metadata.create_all(bind=engine)
+from app.modules.products.presentation.router import router as products_router
+from app.modules.categories.presentation.router import router as categories_router
 
 configure_logging()
 
@@ -29,10 +26,19 @@ app.add_middleware(
 
 register_exception_handlers(app)
 
-app.include_router(auth_router, prefix="/api/v1")
-app.include_router(products_router, prefix="/api/v1")
-app.include_router(categories_router,prefix="/api/v1")
+api_router = APIRouter(prefix="/api/v1")
+
+api_router.include_router(auth_router)
+api_router.include_router(products_router)
+api_router.include_router(categories_router)
+
+app.include_router(api_router)
 
 @app.get("/health", tags=["health"])
 def health_check() -> dict:
     return {"status": "ok", "version": settings.APP_VERSION}
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="localhost", port=8000)

@@ -1,106 +1,103 @@
-from starlette import status
-from supabase import AsyncClient
-
-from app.core.exceptions import AppException
-from app.modules.products.domain.errors import CategoryNameAlreadyExistsError, CategoryNotFoundError, ProductNotFoundError, SubCategoryCannotHaveChildrenError
-from app.modules.products.presentation.schemas import (
-    CategoryItem,
-    CategoryResponse,
-    CreateProductRequest,
-    SuccessResponse,
-    UpdateProductRequest,
-    ProductResponse,
-    ProductListResponse,
-)
+from app.modules.products.infrastructure.products_repository_supabase import ProductsRepositorySupabase
+from app.modules.products.application.ports import ImageStorage
+from app.modules.products.infrastructure.storage_supabase import SupabaseImageStorage
+from fastapi import Depends, UploadFile
+from typing import List
 
 
 class ProductsService:
-    def __init__(self, admin_client: AsyncClient,anon_client:AsyncClient) -> None:
-        self.client = admin_client
-        self._anon = anon_client
+    def __init__(self, repository: ProductsRepositorySupabase = Depends(ProductsRepositorySupabase), storage: ImageStorage = Depends(SupabaseImageStorage)) -> None:
+        self.repository = repository
+        self.storage = storage
 
-
-
-    async def create_category(self,category_name:str)->CategoryResponse:
-            existingCategory = await self.client.from_("category").select("id").eq("category_name",category_name).is_("parent_id",None).execute()
-            
-            if existingCategory.data:
-                raise CategoryNameAlreadyExistsError()
-            
-            try:
-
-                result = await self.client.from_("category").insert({"category_name":category_name,"parent_id":None}).execute()
-            
-            except Exception as e:
-                raise AppException(f"Failed to create category: {str(e)}", status.HTTP_500_INTERNAL_SERVER_ERROR)
-            
-            row = result.data[0]
-            return CategoryResponse(id=row["id"],category_name= row["category_name"])
-        
-    async def get_all_categories(self)->list[CategoryResponse]:
-        
+    async def get_all_products(self, limit: int = 10, offset: int = 0, search: str = None):
         try:
-            result = await self.client.from_("category").select("*").order("parent_id").execute()
-            
+            return await self.repository.get_all_products(limit, offset, search)
         except Exception as e:
-                raise AppException(f"Failed to retrieve categories: {str(e)}", status.HTTP_500_INTERNAL_SERVER_ERROR)
-            
-        categories = result.data
-        tree = {}
-        for category in categories: #id category_name parent_id
-            if category["parent_id"] is None:
-                tree[category["id"]] = CategoryResponse(id = category["id"],category_name=category["category_name"])
-                
-        for category in categories:
-            if category["parent_id"] is not None and category["parent_id"] in tree:
-                tree[category["parent_id"]].subcategories.append(CategoryItem(id=category["id"],category_name=category["category_name"]))
-                
-        return list(tree.values())    
-    
-    async def create_subcategory(self,category_name:str,parent_id:int)->CategoryItem:
+            raise e
+
+    async def create_product(self, payload, files: List[UploadFile] = None):
         try:
-            parent_result = await self.client.from_("category").select("id, parent_id").eq("id",parent_id).execute()
+            created = await self.repository.create_product(payload.dict())
+
+            product = created[0]
+
+            # if file and product created, save image and create product_img record
+            if files and product and product.get("id"):
+                images = []
+                for f in files:
+                    img = await self.create_product_image(product["id"], f)
+                    images.append(img)
+                # mark the first image as primary if none already
+                if images:
+                    images[0][0]["is_primary"] = True
+                product["images"] = images
+
+            return product
         except Exception as e:
-                raise AppException(f"Failed Retrieving the parent {str(e)}", status.HTTP_500_INTERNAL_SERVER_ERROR)
-        if not parent_result.data:
-            raise CategoryNotFoundError()
-        
-        if parent_result.data[0]["parent_id"] is not None:
-            raise SubCategoryCannotHaveChildrenError()
+            raise e
+
+    async def create_product_image(self, product_id: str, file: UploadFile, variant: str = None, is_primary: bool = False):
         try:
-            insert_result = await self.client.from_("category").insert({"category_name":category_name,"parent_id":parent_id}).execute()
+            image_url = await self.storage.save(file)
+            img = await self.repository.create_product_image(product_id, image_url, variant, is_primary)
+            return img
         except Exception as e:
-                raise AppException(f"Failed inserting the data {str(e)}", status.HTTP_500_INTERNAL_SERVER_ERROR)
-        response = insert_result.data[0]
-        return  CategoryItem(id=response["id"],category_name=response["category_name"])
-    
-    async def delete_category(self,category_id:int)->None:
+            raise e
+
+    async def delete_product_image(self, product_id: str, image_id: int):
         try:
-            # ToDo : Check if a product is assigned to the deleted category first and raise error if there is
-            result = await self.client.from_("category").delete().eq("id",category_id).execute()
+            image = await self.repository.get_product_image(image_id)
+            if not image or image["product_id"] != product_id:
+                raise Exception(f"Image with id {image_id} does not exist for product {product_id}")
+
+            image_path = image["image_url"]
+
+            if image["is_primary"]:
+                other_images = await self.repository.list_product_images(product_id, exclude_image_id=image_id)
+                if other_images and len(other_images) > 0:
+                    await self.repository.set_product_image_primary(other_images[0]["id"])
+
+            await self.repository.delete_product_image_row(image_id)
+            await self.storage.delete(image_path)
         except Exception as e:
-            raise AppException(f"Failed deleting category {str(e)}", status.HTTP_500_INTERNAL_SERVER_ERROR)
-        if not result.data:
-            raise CategoryNotFoundError()
-        
-       
-            
-                    
-    async def create_product(self, payload: CreateProductRequest) -> ProductResponse:
-        pass
+            raise e
 
-    async def get_product(self, product_id: str) -> ProductResponse:
-        pass
+    async def make_primary_image(self, product_id: str, image_id: int):
+        try:
+            image = await self.repository.get_product_image(image_id)
+            if not image or image["product_id"] != product_id:
+                raise Exception(f"Image with id {image_id} does not exist for product {product_id}")
 
-    async def get_all_products(self) -> ProductListResponse:
-        pass
+            await self.repository.set_all_product_images_non_primary(product_id)
+            await self.repository.set_product_image_primary(image_id)
+        except Exception as e:
+            raise e
 
-    async def update_product(self, product_id: str, payload: UpdateProductRequest) -> ProductResponse:
-        pass
+    async def get_product(self, product_id: str):
+        try:
+            return await self.repository.get_product(product_id)
+        except Exception as e:
+            raise e
 
-    async def delete_product(self, product_id: str) -> None:
-        pass
+    async def update_product(self, product_id: int, payload, files: List[UploadFile] = None):
+        try:
+            product = await self.repository.update_product(product_id, payload.dict())
+            if files and product and product.get("id"):
+                images = []
+                for f in files:
+                    img = await self.create_product_image(product["id"], f)
+                    images.append(img)
+                # mark the first image as primary if none already
+                if images:
+                    images[0][0]["is_primary"] = True
+                product["images"] = images
+            return product
+        except Exception as e:
+            raise e
 
-
-                
-                
+    async def delete_product(self, product_id: str):
+        try:
+            return await self.repository.delete_product(product_id)
+        except Exception as e:
+            raise e
