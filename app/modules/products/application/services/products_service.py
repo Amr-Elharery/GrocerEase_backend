@@ -14,7 +14,7 @@ class ProductsService:
         try:
             return await self.repository.get_all_products(limit, offset, search)
         except Exception as e:
-            return e
+            raise e
 
     async def create_product(self, payload, files: List[UploadFile] = None):
         try:
@@ -35,7 +35,7 @@ class ProductsService:
 
             return product
         except Exception as e:
-            return e
+            raise e
 
     async def create_product_image(self, product_id: str, file: UploadFile, variant: str = None, is_primary: bool = False):
         try:
@@ -47,15 +47,30 @@ class ProductsService:
 
     async def delete_product_image(self, product_id: str, image_id: int):
         try:
-            image_path = await self.repository.get_product_image_path(image_id)
-            await self.repository.delete_product_image(product_id, image_id)
+            image = await self.repository.get_product_image(image_id)
+            if not image or image["product_id"] != product_id:
+                raise Exception(f"Image with id {image_id} does not exist for product {product_id}")
+
+            image_path = image["image_url"]
+
+            if image["is_primary"]:
+                other_images = await self.repository.list_product_images(product_id, exclude_image_id=image_id)
+                if other_images and len(other_images) > 0:
+                    await self.repository.set_product_image_primary(other_images[0]["id"])
+
+            await self.repository.delete_product_image_row(image_id)
             await self.storage.delete(image_path)
         except Exception as e:
             raise e
 
     async def make_primary_image(self, product_id: str, image_id: int):
         try:
-            await self.repository.make_primary_image(product_id, image_id)
+            image = await self.repository.get_product_image(image_id)
+            if not image or image["product_id"] != product_id:
+                raise Exception(f"Image with id {image_id} does not exist for product {product_id}")
+
+            await self.repository.set_all_product_images_non_primary(product_id)
+            await self.repository.set_product_image_primary(image_id)
         except Exception as e:
             raise e
 

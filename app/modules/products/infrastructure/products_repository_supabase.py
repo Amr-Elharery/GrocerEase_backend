@@ -52,45 +52,57 @@ class ProductsRepositorySupabase:
         print(f"Error creating product image: {e}")
         raise e
 
+    async def get_product_image(self, image_id: int):
+      try:
+        response = await self.client.from_("product_images").select("id, product_id, image_url, is_primary").eq("id", image_id).single().execute()
+        return response.data
+      except Exception as e:
+        print(f"Error fetching product image: {e}")
+        raise e
+
     async def get_product_image_path(self, image_id: int) -> str:
       try:
-        response = await self.client.from_("product_images").select("image_url").eq("id", image_id).single().execute()
-        if response.data and response.data["image_url"]:
-          return response.data["image_url"]
-        else:
-          raise Exception(f"No image found with id: {image_id}")
+        image = await self.get_product_image(image_id)
+        if image and image["image_url"]:
+          return image["image_url"]
+        raise Exception(f"No image found with id: {image_id}")
       except Exception as e:
         print(f"Error fetching product image path: {e}")
         raise e
 
-    async def delete_product_image(self, product_id: str, image_id: int):
+    async def list_product_images(self, product_id: str, exclude_image_id: int = None):
       try:
-        img = await self.client.from_("product_images").select("is_primary, product_id").eq("id", image_id).eq("product_id", product_id).single().execute()
-        if img.data and img.data["is_primary"]:
-          # If the image being deleted is primary, we should set another image as primary if it exists
-          other_images = await self.client.from_("product_images").select("id").eq("product_id", img.data["product_id"]).neq("id", image_id).execute()
-          if other_images.data and len(other_images.data) > 0:
-            await self.client.from_("product_images").update({"is_primary": True}).eq("id", other_images.data[0]["id"]).execute()
-
-        response = await self.client.from_("product_images").delete().eq("id", image_id).execute()
+        query = self.client.from_("product_images").select("id").eq("product_id", product_id)
+        if exclude_image_id is not None:
+          query = query.neq("id", exclude_image_id)
+        response = await query.execute()
         return response.data
       except Exception as e:
-        print(f"Error deleting product image: {e}")
+        print(f"Error listing product images: {e}")
         raise e
 
-    async def make_primary_image(self, product_id: str, image_id: int):
+    async def set_all_product_images_non_primary(self, product_id: str):
       try:
-        # Check imaege exists and belongs to product
-        img = await self.client.from_("product_images").select("id").eq("id", image_id).eq("product_id", product_id).single().execute()
-        if not img.data:
-          raise Exception(f"Image with id {image_id} does not exist for product {product_id}")
-        # First, set all images for the product to is_primary = False
-        await self.client.from_("product_images").update({"is_primary": False}).eq("product_id", product_id).execute()
-        # Then, set the specified image to is_primary = True
+        response = await self.client.from_("product_images").update({"is_primary": False}).eq("product_id", product_id).execute()
+        return response.data
+      except Exception as e:
+        print(f"Error unsetting primary product images: {e}")
+        raise e
+
+    async def set_product_image_primary(self, image_id: int):
+      try:
         response = await self.client.from_("product_images").update({"is_primary": True}).eq("id", image_id).execute()
         return response.data
       except Exception as e:
-        print(f"Error making image primary: {e}")
+        print(f"Error setting product image primary: {e}")
+        raise e
+
+    async def delete_product_image_row(self, image_id: int):
+      try:
+        response = await self.client.from_("product_images").delete().eq("id", image_id).execute()
+        return response.data
+      except Exception as e:
+        print(f"Error deleting product image row: {e}")
         raise e
 
     async def get_product(self, product_id: int):
