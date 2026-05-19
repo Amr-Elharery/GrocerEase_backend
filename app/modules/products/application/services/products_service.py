@@ -1,17 +1,33 @@
 from app.modules.products.infrastructure.products_repository_supabase import ProductsRepositorySupabase
-from fastapi import Depends
+from app.modules.products.application.ports import ImageStorage
+from app.modules.products.infrastructure.storage_supabase import SupabaseImageStorage
+from fastapi import Depends, UploadFile
+
+
 class ProductsService:
-    def __init__(self, repository: ProductsRepositorySupabase = Depends(ProductsRepositorySupabase)) -> None:
+    def __init__(self, repository: ProductsRepositorySupabase = Depends(ProductsRepositorySupabase), storage: ImageStorage = Depends(SupabaseImageStorage)) -> None:
         self.repository = repository
+        self.storage = storage
 
     async def get_all_products(self, limit: int = 10, offset: int = 0, search: str = None):
         try:
             return await self.repository.get_all_products(limit, offset, search)
         except Exception as e:
             return e
-    async def create_product(self, payload):
+
+    async def create_product(self, payload, file: UploadFile = None):
         try:
-            return await self.repository.create_product(payload)
+            created = await self.repository.create_product(payload.dict())
+
+            product = created[0]
+
+            # if file and product created, save image and create product_img record
+            if file and product and product.get("id"):
+                image_url = await self.storage.save(file)
+                img = await self.repository.create_product_image(product.get("id"), image_url, variant=None, is_primary=True)
+                product["images"] = img
+
+            return product
         except Exception as e:
             return e
 
@@ -19,13 +35,16 @@ class ProductsService:
         try:
             return await self.repository.get_product(product_id)
         except Exception as e:
-            return e
+            raise e
 
     async def update_product(self, product_id: str, payload):
-        pass
+        try:
+            return await self.repository.update_product(product_id, payload.dict())
+        except Exception as e:
+            raise e
 
     async def delete_product(self, product_id: str):
         try:
             return await self.repository.delete_product(product_id)
         except Exception as e:
-            return e
+            raise e
