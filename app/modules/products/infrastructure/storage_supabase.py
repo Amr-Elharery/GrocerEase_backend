@@ -3,7 +3,7 @@ from pathlib import Path
 from fastapi import UploadFile, Depends
 from supabase import AsyncClient
 from app.db.supabase_client import get_admin_client
-from app.modules.products.application.ports import ImageStorage
+from app.core.ports import ImageStorage
 
 
 class SupabaseImageStorage(ImageStorage):

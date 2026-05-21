@@ -1,5 +1,5 @@
 from app.modules.products.infrastructure.products_repository_supabase import ProductsRepositorySupabase
-from app.modules.products.application.ports import ImageStorage
+from app.core.ports import ImageStorage
 from app.modules.products.infrastructure.storage_supabase import SupabaseImageStorage
 from fastapi import Depends, UploadFile
 from typing import List
