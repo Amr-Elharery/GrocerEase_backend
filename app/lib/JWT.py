@@ -27,8 +27,6 @@ class JWT:
   def decode(self, token: str) -> dict:
     if not token:
       raise ValueError("Missing token")
-    if token.startswith("Bearer "):
-      token = token[7:]
     try:
       decoded_payload = jwt.decode(token, self.secret_key, algorithms=[self.algorithm])
       return decoded_payload

@@ -11,6 +11,9 @@ class AuthController:
     async def sign_in_with_password(self, login_data):
         return await self.auth_service.sign_in_with_password(login_data)
 
+    async def refresh_token(self, user_data):
+        return await self.auth_service.refresh_token(user_data)
+
     # async def forgot_password(self, payload):
     #     return await self.auth_service.forgot_password(payload.email)
 

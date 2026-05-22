@@ -39,6 +39,15 @@ class AuthService:
         )
         return {"user_data": user_data,"access_token": token, "refresh_token": refresh_token}
 
+    async def refresh_token(self, user_data):
+        token = jwt_handler.encode(
+            user_data=user_data,
+            expiry=timedelta(hours=1),
+            refresh=False
+        )
+
+        return {"new_access_token": token}
+
     # def forgot_password(self, email):
     #     return self.auth_repository.forgot_password(email)
 

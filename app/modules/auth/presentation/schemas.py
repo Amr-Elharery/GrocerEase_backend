@@ -17,11 +17,16 @@ class LoginRequest(BaseModel):
         email:EmailStr
         password:str
 
-class AuthResponse(BaseModel):
-    message: str
-    access_token: str | None = None
-    refresh_token: str | None = None
+class UserOut(BaseModel):
+    id: str
+    email: EmailStr
+    full_name: str
+    roles: list[str]
 
+class LoginResponse(BaseModel):
+    user_data: UserOut
+    access_token: str
+    refresh_token: str
 
 class ChangePasswordRequest(BaseModel):
     current_password: str

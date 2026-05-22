@@ -1,16 +1,16 @@
-from fastapi import APIRouter, Depends, status, HTTPException
+from fastapi import APIRouter, Depends, status
 
-from app.core.dependencies import get_current_user
-from app.db.supabase_client import get_admin_client, get_anon_client
+from app.core.dependencies import verify_bearer_token, verify_refresh_token, get_current_user, require_roles
+
 from app.modules.auth.application.services.auth_service import AuthService
 from app.modules.auth.presentation.controller import AuthController
-from app.modules.auth.domain.errors import AuthenticationError, InvalidCredentialsError
+from app.modules.auth.domain.errors import AuthenticationError
 from app.modules.auth.presentation.schemas import (
     ChangePasswordRequest,
     ForgotPasswordRequest,
     LoginRequest,
+    LoginResponse,
     RegisterRequest,
-    AuthResponse,
     ResetPasswordRequest,
     UpdateProfileRequest,
 )
@@ -25,16 +25,36 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 async def register(payload: RegisterRequest, controller: AuthController = Depends(AuthController)):
     try:
-        return await controller.register(payload)
+        await controller.register(payload)
+        return {"message": "User registered successfully"}
     except Exception as e:
         raise AuthenticationError(str(e))
 
-@router.post("/login", status_code=status.HTTP_200_OK)
+@router.post("/login", response_model=LoginResponse, status_code=status.HTTP_200_OK)
 async def login(payload: LoginRequest, controller: AuthController = Depends(AuthController)):
     try:
         return await controller.sign_in_with_password(payload)
     except Exception as e:
         raise AuthenticationError(str(e))
+
+@router.post("/refresh-token", status_code=status.HTTP_200_OK)
+async def refresh_token(payload = Depends(verify_refresh_token), controller: AuthController = Depends(AuthController)):
+    try:
+        user_data = payload.get("user")
+        new_token = await controller.refresh_token(user_data)
+        return new_token
+    except Exception as e:
+        raise AuthenticationError(str(e))
+
+# For Development and Testing purposes only
+@router.post("/check-token", status_code=status.HTTP_200_OK)
+async def check_token(current_user=Depends(get_current_user)):
+    return {"message": "Token is valid"}
+
+# For Development and Testing purposes only
+@router.post("/check-admin", status_code=status.HTTP_200_OK)
+async def check_admin(is_admin=Depends(require_roles(["admin"]))):
+    return {"message": "User is an admin"}
 
 # @router.post("/change-password", status_code=status.HTTP_200_OK)
 # async def change_password(payload: ChangePasswordRequest, controller: AuthController = Depends(_get_controller),user = Depends(get_current_user)):
