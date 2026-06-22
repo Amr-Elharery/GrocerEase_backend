@@ -34,11 +34,15 @@ api_router.include_router(categories_router)
 
 app.include_router(api_router)
 
+@app.get("/", tags=["root"])
+def root() -> dict:
+    return {"message": f"Welcome to {settings.APP_NAME} !", "version": settings.APP_VERSION, "Environment": settings.APP_ENV}
+
 @app.get("/health", tags=["health"])
 def health_check() -> dict:
     return {"status": "ok", "version": settings.APP_VERSION}
 
 
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="localhost", port=8000)
+    import os
+    os.system("fastapi dev")
