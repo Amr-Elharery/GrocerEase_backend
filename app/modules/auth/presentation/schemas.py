@@ -17,8 +17,6 @@ class LoginRequest(BaseModel):
         email:EmailStr
         password:str
 
-
-
 class AuthResponse(BaseModel):
     message: str
     access_token: str | None = None
@@ -29,21 +27,17 @@ class ChangePasswordRequest(BaseModel):
     current_password: str
     new_password: str
 
-    
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr
-
-class GeneralResponse(BaseModel):
-    message:str
 
 class ResetPasswordRequest(BaseModel):
     access_token: str
     new_password: str
-    
+
 class UpdateProfileRequest(BaseModel):
     full_name:str | None
     phone:str | None
-    
+
 
     @field_validator("phone")
     @classmethod
@@ -51,7 +45,7 @@ class UpdateProfileRequest(BaseModel):
         if v is not None and not re.match(r"^\+[1-9]\d{7,14}$",v):
             raise ValueError("Phone must be in E.164 format (e.g. +201231255122)")    
         return v
-    
+
 class UpdateProfileResponse(BaseModel):
     full_name:str | None
-    phone:str | None      
+    phone:str | None

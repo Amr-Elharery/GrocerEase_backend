@@ -1,100 +1,46 @@
-from supabase_auth.errors import AuthApiError
-from supabase import AsyncClient
-
-from app.modules.auth.domain.errors import EmailAlreadyRegisteredError, EmailNotVerifiedError, InvalidCredentialsError, InvalidTokenError, PhoneAlreadyInUseError
-from app.modules.auth.presentation.schemas import AuthResponse,GeneralResponse, UpdateProfileResponse
-
-
+from app.modules.auth.infrastructure.auth_repository_supabase import AuthRepositorySupabase
+from fastapi import Depends
+from app.lib.JWT import jwt_handler
+from datetime import timedelta
+from app.modules.auth.domain.helpers import normalize_roles
 class AuthService:
+    def __init__(self, auth_repository: AuthRepositorySupabase = Depends(AuthRepositorySupabase)):
+        self.auth_repository = auth_repository
 
-    def __init__(self, admin_client: AsyncClient, anon_client: AsyncClient) -> None:
-        self.client = admin_client
-        self._anon = anon_client
+    def register_user(self, registration_data):
+        registration_data = registration_data.dict().copy()
+        registration_data["options"] = {
+            "data": {
+                "full_name": registration_data.get("full_name"),
+                "phone": registration_data.get("phone"),
+            }
+        }
+        return self.auth_repository.sign_up(registration_data)
 
-    async def register(self, email: str, password: str, full_name: str) -> AuthResponse:
-        try:
-            response = await self.client.auth.sign_up(
-            {"email": email, "password": password, "options": {"data": {"full_name": full_name}}}
-            )
-        except AuthApiError as e:    
-            if "already registered" in str(e).lower():
-                raise EmailAlreadyRegisteredError()
-            raise
-
-        session = response.session
-        if session:
-            return AuthResponse(
-            message="Registration successful",
-            access_token=session.access_token,
-            refresh_token=session.refresh_token,
+    async def sign_in_with_password(self, login_data):
+        user_id = await self.auth_repository.sign_in_with_password(login_data.dict())
+        raw_user = await self.auth_repository.get_user_by_id(user_id)
+        user_data = {
+            "id": raw_user["id"],
+            "email": raw_user["email"],
+            "full_name": raw_user["full_name"],
+            "roles": normalize_roles(raw_user.get("roles", [])),
+        }
+        token = jwt_handler.encode(
+            user_data=user_data,
+            expiry=timedelta(hours=1),
+            refresh=False
         )
-        return AuthResponse(message="Registration successful. Please verify your email.")
 
-    async def login(self,email:str,password:str)->AuthResponse:
-       try:
-        response = await self.client.auth.sign_in_with_password({"email":email,"password":password})
-        
-       except AuthApiError as e:
-           if "Email not confirmed" in str(e):
-               raise EmailNotVerifiedError()
-           raise InvalidCredentialsError()
-               
-       if response.user is None:
-            raise InvalidCredentialsError()
-        
-       session = response.session
-       if session:
-            return AuthResponse(
-                message="Login Successful",
-                access_token=session.access_token,
-                refresh_token=session.refresh_token
-            )
-       raise  EmailNotVerifiedError()   
-            
-        
-    async def change_password(self, user_id: str, user_email: str, current_password: str, new_password: str) -> GeneralResponse:
-        try:
-            sign_in_response = await self._anon.auth.sign_in_with_password({"email": user_email, "password": current_password})
-        except AuthApiError:
-            raise InvalidCredentialsError()
+        refresh_token = jwt_handler.encode(
+            user_data=user_data,
+            expiry=timedelta(days=2),
+            refresh=True
+        )
+        return {"user_data": user_data,"access_token": token, "refresh_token": refresh_token}
 
-        access_token = sign_in_response.session.access_token
-        await self._anon.auth.set_session(access_token, sign_in_response.session.refresh_token)
-        await self._anon.auth.update_user({"password": new_password})
-        try:
-            await self._anon.auth.sign_in_with_password({"email": user_email, "password": new_password})
-            return GeneralResponse(message="Password changed Successfully")
-        except AuthApiError:
-            raise InvalidCredentialsError()
+    # def forgot_password(self, email):
+    #     return self.auth_repository.forgot_password(email)
 
-    async def forgot_password(self, email: str) -> None:
-        await self.client.auth.reset_password_for_email(email)
-        return GeneralResponse(message="Check your email for password reset")
-
-    async def reset_password(self, access_token: str, new_password: str) -> None:
-        try:
-            user_response = await self.client.auth.get_user(access_token)
-        except AuthApiError:
-            raise InvalidTokenError()
-
-        await self.client.auth.admin.update_user_by_id(user_response.user.id, {"password": new_password})
-        return GeneralResponse(message="Password reseted Successfully")
-            
-    async def update_user_profile(self,user_id:str,user_full_name:str |None ,user_phone:str | None)->UpdateProfileResponse:
-        payload = {}
-        if user_full_name is not None:
-            payload["user_metadata"] = {"full_name": user_full_name}
-        if user_phone is not None:
-            payload["phone"] = user_phone
-        try:
-            
-            response = await self.client.auth.admin.update_user_by_id(user_id,payload)
-        
-        except AuthApiError as e:
-            if "already" in str(e).lower() or "phone" in str(e).lower():
-                raise PhoneAlreadyInUseError
-            raise    
-        
-        return UpdateProfileResponse(full_name=response.user.user_metadata.get("full_name"),
-        phone= response.user.phone)
-        
+    # def reset_password(self, reset_data):
+    #     return self.auth_repository.reset_password(reset_data)

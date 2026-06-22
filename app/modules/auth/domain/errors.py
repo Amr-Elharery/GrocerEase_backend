@@ -2,10 +2,13 @@ from app.core.exceptions import AppException, UnauthorizedException
 from fastapi import status
 
 
+class AuthenticationError(AppException):
+    def __init__(self, message: str = "Authentication failed", status_code: int = status.HTTP_401_UNAUTHORIZED) -> None:
+        super().__init__(message, status_code)
+
 class InvalidCredentialsError(UnauthorizedException):
     def __init__(self) -> None:
         super().__init__("Invalid email or password")
-
 
 class EmailAlreadyRegisteredError(AppException):
     def __init__(self) -> None:
