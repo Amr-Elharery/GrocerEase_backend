@@ -45,7 +45,7 @@ async def update_product(product_id: int, files: List[UploadFile] = File(None), 
         raise ProductsError(str(e))
 
 @router.delete("/{product_id}/images/{image_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_product_image(product_id: str, image_id: int, controller: ProductsController = Depends(ProductsController)):
+async def delete_product_image(product_id: int, image_id: int, controller: ProductsController = Depends(ProductsController)):
     try:
         await controller.delete_product_image(product_id, image_id)
         return {"message": "Image deleted successfully"}
