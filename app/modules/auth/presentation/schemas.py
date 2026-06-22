@@ -25,6 +25,9 @@ class UserOut(BaseModel):
     full_name: str
     roles: list[str]
 
+class UserProfileOut(UserOut):
+    pass
+
 class LoginResponse(BaseModel):
     user_data: UserOut
     access_token: str
