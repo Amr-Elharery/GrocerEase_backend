@@ -4,6 +4,7 @@ import re
 class RegisterRequest(BaseModel):
     email: EmailStr
     password: str
+    phone: str
     confirmPassword: str
     full_name: str
 
@@ -20,8 +21,12 @@ class LoginRequest(BaseModel):
 class UserOut(BaseModel):
     id: str
     email: EmailStr
+    phone: str
     full_name: str
     roles: list[str]
+
+class UserProfileOut(UserOut):
+    pass
 
 class LoginResponse(BaseModel):
     user_data: UserOut

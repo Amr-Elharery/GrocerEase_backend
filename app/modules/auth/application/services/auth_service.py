@@ -23,6 +23,7 @@ class AuthService:
         user_data = {
             "id": raw_user["id"],
             "email": raw_user["email"],
+            "phone": raw_user["phone_number"],
             "full_name": raw_user["full_name"],
             "roles": normalize_roles(raw_user.get("roles", [])),
         }
