@@ -8,6 +8,13 @@ class RegisterRequest(BaseModel):
     confirmPassword: str
     full_name: str
 
+    @field_validator("phone")
+    @classmethod
+    def validate_phone(cls,v:str|None)->str|None:
+        if v is not None and not re.match(r"^\+[1-9]\d{7,14}$",v):
+            raise ValueError("Phone must be in E.164 format (e.g. +201231255122)")
+        return v
+
     @model_validator(mode="after") # Used Model Validator for checking the matching between password and confirmpassword
     def passwords_match(self) -> "RegisterRequest":
         if self.password != self.confirmPassword:
@@ -42,20 +49,25 @@ class ForgotPasswordRequest(BaseModel):
 
 class ResetPasswordRequest(BaseModel):
     access_token: str
+    refresh_token: str
     new_password: str
 
 class UpdateProfileRequest(BaseModel):
-    full_name:str | None
-    phone:str | None
-
+    full_name:str
+    phone:str
 
     @field_validator("phone")
     @classmethod
     def validate_phone(cls,v:str|None)->str|None:
         if v is not None and not re.match(r"^\+[1-9]\d{7,14}$",v):
-            raise ValueError("Phone must be in E.164 format (e.g. +201231255122)")    
+            raise ValueError("Phone must be in E.164 format (e.g. +201231255122)")
         return v
 
+class UpdatedUser(BaseModel):
+    id: str
+    email: EmailStr
+    phone_number: str
+    full_name: str
 class UpdateProfileResponse(BaseModel):
-    full_name:str | None
-    phone:str | None
+    message: str
+    user: UpdatedUser
