@@ -5,8 +5,8 @@ class AuthController:
     def __init__(self, auth_service: AuthService = Depends(AuthService)):
         self.auth_service = auth_service
 
-    async def register(self, registration_data):
-        return await self.auth_service.register_user(registration_data)
+    async def register(self, registration_data, role: str = "customer"):
+        return await self.auth_service.register_user(registration_data, role=role)
 
     async def sign_in_with_password(self, login_data):
         return await self.auth_service.sign_in_with_password(login_data)

@@ -45,7 +45,7 @@ class ProductsService:
         except Exception as e:
             raise e
 
-    async def delete_product_image(self, product_id: str, image_id: int):
+    async def delete_product_image(self, product_id: int, image_id: int):
         try:
             image = await self.repository.get_product_image(image_id)
             if not image or image["product_id"] != product_id:

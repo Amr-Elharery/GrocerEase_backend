@@ -9,6 +9,7 @@ from app.modules.auth.presentation.schemas import (
     ChangePasswordRequest,
     ForgotPasswordRequest,
     LoginRequest,
+    UserProfileOut,
     LoginResponse,
     RegisterRequest,
     ResetPasswordRequest,
@@ -17,15 +18,30 @@ from app.modules.auth.presentation.schemas import (
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-# @router.get("/me")
-# async def get_profile(controller: AuthController = Depends(AuthController)):
-#     return {"user_id":user.id,"email":user.email,   "full_name": user.user_metadata.get("full_name"),
-#     "created_at": user.created_at,}
+@router.get("/me", response_model=UserProfileOut, status_code=status.HTTP_200_OK)
+async def get_profile(current_user=Depends(get_current_user)):
+    return current_user
 
-@router.post("/register", status_code=status.HTTP_201_CREATED)
+@router.post("/customer/register", status_code=status.HTTP_201_CREATED)
 async def register(payload: RegisterRequest, controller: AuthController = Depends(AuthController)):
     try:
         await controller.register(payload)
+        return {"message": "User registered successfully"}
+    except Exception as e:
+        raise AuthenticationError(str(e))
+
+@router.post("/vendor/register", status_code=status.HTTP_201_CREATED)
+async def register(payload: RegisterRequest, controller: AuthController = Depends(AuthController)):
+    try:
+        await controller.register(payload, role="vendor")
+        return {"message": "User registered successfully"}
+    except Exception as e:
+        raise AuthenticationError(str(e))
+
+@router.post("/admin/register", status_code=status.HTTP_201_CREATED)
+async def register(payload: RegisterRequest, controller: AuthController = Depends(AuthController)):
+    try:
+        await controller.register(payload, role="admin")
         return {"message": "User registered successfully"}
     except Exception as e:
         raise AuthenticationError(str(e))
@@ -47,14 +63,14 @@ async def refresh_token(payload = Depends(verify_refresh_token), controller: Aut
         raise AuthenticationError(str(e))
 
 # For Development and Testing purposes only
-@router.post("/check-token", status_code=status.HTTP_200_OK)
-async def check_token(current_user=Depends(get_current_user)):
-    return {"message": "Token is valid"}
+# @router.post("/check-token", status_code=status.HTTP_200_OK)
+# async def check_token(current_user=Depends(get_current_user)):
+#     return {"message": "Token is valid"}
 
-# For Development and Testing purposes only
-@router.post("/check-admin", status_code=status.HTTP_200_OK)
-async def check_admin(is_admin=Depends(require_roles(["admin"]))):
-    return {"message": "User is an admin"}
+# # For Development and Testing purposes only
+# @router.post("/check-admin", status_code=status.HTTP_200_OK)
+# async def check_admin(is_admin=Depends(require_roles(["admin"]))):
+#     return {"message": "User is an admin"}
 
 # @router.post("/change-password", status_code=status.HTTP_200_OK)
 # async def change_password(payload: ChangePasswordRequest, controller: AuthController = Depends(_get_controller),user = Depends(get_current_user)):
