@@ -14,6 +14,7 @@ from app.modules.auth.presentation.schemas import (
     RegisterRequest,
     ResetPasswordRequest,
     UpdateProfileRequest,
+    UpdateProfileResponse
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -53,6 +54,14 @@ async def login(payload: LoginRequest, controller: AuthController = Depends(Auth
     except Exception as e:
         raise AuthenticationError(str(e))
 
+@router.post("/logout", status_code=status.HTTP_200_OK)
+async def logout(controller: AuthController = Depends(AuthController)):
+    try:
+        await controller.logout()
+        return {"message": "User logged out successfully"}
+    except Exception as e:
+        raise AuthenticationError(str(e))
+
 @router.post("/refresh-token", status_code=status.HTTP_200_OK)
 async def refresh_token(payload = Depends(verify_refresh_token), controller: AuthController = Depends(AuthController)):
     try:
@@ -72,20 +81,30 @@ async def refresh_token(payload = Depends(verify_refresh_token), controller: Aut
 # async def check_admin(is_admin=Depends(require_roles(["admin"]))):
 #     return {"message": "User is an admin"}
 
-# @router.post("/change-password", status_code=status.HTTP_200_OK)
-# async def change_password(payload: ChangePasswordRequest, controller: AuthController = Depends(_get_controller),user = Depends(get_current_user)):
-#     return await controller.change_password(user.id,user.email,payload)
+@router.post("/change-password", status_code=status.HTTP_200_OK)
+async def change_password(payload: ChangePasswordRequest, user = Depends(get_current_user), controller: AuthController = Depends(AuthController)):
+    try:
+        await controller.change_password(payload, user)
+        return {"message": "Password changed successfully"}
+    except Exception as e:
+        raise AuthenticationError(str(e))
 
+# Need test
+@router.post("/web/forgot-password", status_code=status.HTTP_200_OK)
+async def forgot_password(payload: ForgotPasswordRequest, controller: AuthController = Depends(AuthController)):
+    return await controller.forgot_password(payload, platform="web")
 
-# @router.post("/forgot-password", status_code=status.HTTP_200_OK)
-# async def forgot_password(payload: ForgotPasswordRequest, controller: AuthController = Depends(_get_controller)):
-#    return await controller.forgot_password(payload)
+# Need test
+@router.post("/mobile/forgot-password", status_code=status.HTTP_200_OK)
+async def forgot_password(payload: ForgotPasswordRequest, controller: AuthController = Depends(AuthController)):
+    return await controller.forgot_password(payload)
 
+# Working
+@router.post("/reset-password", status_code=status.HTTP_200_OK)
+async def reset_password(payload: ResetPasswordRequest, controller: AuthController = Depends(AuthController)):
+    return await controller.reset_password(payload)
 
-# @router.post("/reset-password", status_code=status.HTTP_200_OK)
-# async def reset_password(payload: ResetPasswordRequest, controller: AuthController = Depends(_get_controller)):
-#     return await controller.reset_password(payload)
-
-# @router.put("/profile",status_code=status.HTTP_200_OK)
-# async def update_user_profile(payload:UpdateProfileRequest,controller: AuthController = Depends(_get_controller),user= Depends(get_current_user)):
-#     return await controller.update_user_profile(user.id,payload)
+@router.put("/profile", response_model = UpdateProfileResponse, status_code=status.HTTP_200_OK)
+async def update_user_profile(payload: UpdateProfileRequest, controller: AuthController = Depends(AuthController), user = Depends(get_current_user)):
+    updated_user = await controller.update_user_profile(user.get("id"), payload)
+    return {"message": "User profile updated successfully", "user": updated_user}
