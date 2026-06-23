@@ -21,6 +21,13 @@ class AuthRepositorySupabase:
         """).eq("id", user_id).single().execute()
         return response.data
 
+    async def add_role_to_user(self, user_id: str, role_id: int):
+        response = await self.supabase_client.from_("users_roles").insert({
+            "user_id": user_id,
+            "role_id": role_id
+        }).execute()
+        return response.data
+
     async def sign_up(self, registration_data):
         response = await self.supabase_client.auth.sign_up(registration_data)
         return response

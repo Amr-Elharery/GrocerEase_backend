@@ -22,10 +22,26 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 async def get_profile(current_user=Depends(get_current_user)):
     return current_user
 
-@router.post("/register", status_code=status.HTTP_201_CREATED)
+@router.post("/customer/register", status_code=status.HTTP_201_CREATED)
 async def register(payload: RegisterRequest, controller: AuthController = Depends(AuthController)):
     try:
         await controller.register(payload)
+        return {"message": "User registered successfully"}
+    except Exception as e:
+        raise AuthenticationError(str(e))
+
+@router.post("/vendor/register", status_code=status.HTTP_201_CREATED)
+async def register(payload: RegisterRequest, controller: AuthController = Depends(AuthController)):
+    try:
+        await controller.register(payload, role="vendor")
+        return {"message": "User registered successfully"}
+    except Exception as e:
+        raise AuthenticationError(str(e))
+
+@router.post("/admin/register", status_code=status.HTTP_201_CREATED)
+async def register(payload: RegisterRequest, controller: AuthController = Depends(AuthController)):
+    try:
+        await controller.register(payload, role="admin")
         return {"message": "User registered successfully"}
     except Exception as e:
         raise AuthenticationError(str(e))
