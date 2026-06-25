@@ -25,8 +25,17 @@ class ShopsService:
         except Exception as e:
             raise e
 
+    async def get_my_shop(self, owner_id: str):
+        try:
+            return await self.repository.get_shop_by_owner(owner_id)
+        except Exception as e:
+            raise e
+
     async def create_shop(self, payload, owner_id: str, logo: UploadFile = None):
         try:
+            existing = await self.repository.get_shop_by_owner(owner_id)
+            if existing:
+                raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="You already have a shop")
             data = payload.dict()
             data["owner_id"] = owner_id
             if logo:

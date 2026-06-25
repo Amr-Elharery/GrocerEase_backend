@@ -19,6 +19,12 @@ class ShopsController:
         except Exception as e:
             raise e
 
+    async def get_my_shop(self, owner_id: str) -> ShopResponse:
+        try:
+            return await self.service.get_my_shop(owner_id)
+        except Exception as e:
+            raise e
+
     async def create_shop(self, payload: CreateShopRequest, owner_id: str, logo: UploadFile = None) -> ShopResponse:
         try:
             return await self.service.create_shop(payload, owner_id, logo)

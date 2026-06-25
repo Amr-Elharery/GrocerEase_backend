@@ -56,6 +56,28 @@ class ShopsRepositorySupabase:
             print(f"Error fetching shop: {e}")
             raise e
 
+    async def get_shop_by_owner(self, owner_id: str):
+        try:
+            response = await self.client.from_("shop").select("""
+                id,
+                owner_id,
+                shop_name,
+                description,
+                address,
+                latitude,
+                longitude,
+                phone_number,
+                logo_url,
+                is_active,
+                created_at,
+                updated_at,
+                area_id
+            """).eq("owner_id", owner_id).eq("is_active", True).single().execute()
+            return response.data
+        except Exception as e:
+            print(f"Error fetching shop by owner: {e}")
+            return None
+
     async def create_shop(self, payload: dict):
         try:
             response = await self.client.from_("shop").insert(payload).execute()

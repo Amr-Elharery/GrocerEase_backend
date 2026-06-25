@@ -22,6 +22,20 @@ async def get_all_shops(limit: int = 10, offset: int = 0, search: str = None, ar
         raise ShopsError(str(e))
 
 
+@router.get("/my-shop", response_model=ShopResponse, status_code=status.HTTP_200_OK)
+async def get_my_shop(controller: ShopsController = Depends(ShopsController), current_user=Depends(get_current_user)):
+    try:
+        owner_id = current_user.get("id")
+        shop = await controller.get_my_shop(owner_id)
+        if not shop:
+            raise ShopsError("You don't have a shop yet", 404)
+        return shop
+    except ShopsError:
+        raise
+    except Exception as e:
+        raise ShopsError(str(e))
+
+
 @router.get("/{shop_id}", response_model=ShopResponse, status_code=status.HTTP_200_OK)
 async def get_shop(shop_id: int, controller: ShopsController = Depends(ShopsController)):
     try:
