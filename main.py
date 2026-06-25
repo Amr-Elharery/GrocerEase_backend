@@ -7,6 +7,7 @@ from app.core.logging import configure_logging
 from app.modules.auth.presentation.router import router as auth_router
 from app.modules.products.presentation.router import router as products_router
 from app.modules.categories.presentation.router import router as categories_router
+from app.modules.shops.presentation.router import router as shops_router
 
 configure_logging()
 
@@ -31,7 +32,7 @@ api_router = APIRouter(prefix="/api/v1")
 api_router.include_router(auth_router)
 api_router.include_router(products_router)
 api_router.include_router(categories_router)
-
+api_router.include_router(shops_router)
 app.include_router(api_router)
 
 @app.get("/", tags=["root"])
