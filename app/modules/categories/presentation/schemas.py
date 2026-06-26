@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class CreateCategoryRequest(BaseModel):
@@ -17,4 +17,4 @@ class CategoryItem(BaseModel):
 class CategoryResponse(BaseModel):
     id: int
     category_name: str
-    subcategories: list[CategoryItem] = []
+    subcategories: list[CategoryItem] = Field(default_factory=list)

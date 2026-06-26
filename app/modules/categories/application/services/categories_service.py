@@ -1,12 +1,14 @@
+from fastapi import Depends
 from starlette import status
-from supabase import AsyncClient
 
 from app.core.exceptions import AppException
 from app.modules.categories.domain.errors import (
+    CategoryHasProductsError,
     CategoryNameAlreadyExistsError,
     CategoryNotFoundError,
     SubCategoryCannotHaveChildrenError,
 )
+from app.modules.categories.infrastructure.categories_repository_supabase import CategoriesRepositorySupabase
 from app.modules.categories.presentation.schemas import (
     CategoryItem,
     CategoryResponse,
@@ -14,32 +16,32 @@ from app.modules.categories.presentation.schemas import (
 
 
 class CategoriesService:
-    def __init__(self, admin_client: AsyncClient, anon_client: AsyncClient) -> None:
-        self.client = admin_client
-        self._anon = anon_client
+    def __init__(
+        self,
+        repository: CategoriesRepositorySupabase = Depends(CategoriesRepositorySupabase),
+    ) -> None:
+        self.repository = repository
 
     async def create_category(self, category_name: str) -> CategoryResponse:
-        existingCategory = await self.client.from_("category").select("id").eq("category_name", category_name).is_("parent_id", None).execute()
+        existing_category = await self.repository.get_category_by_name(category_name, None)
 
-        if existingCategory.data:
+        if existing_category:
             raise CategoryNameAlreadyExistsError()
 
         try:
-            result = await self.client.from_("category").insert({"category_name": category_name, "parent_id": None}).execute()
+            row = await self.repository.create_category(category_name, None)
         except Exception as e:
             raise AppException(f"Failed to create category: {str(e)}", status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        row = result.data[0]
         return CategoryResponse(id=row["id"], category_name=row["category_name"])
 
     async def get_all_categories(self) -> list[CategoryResponse]:
         try:
-            result = await self.client.from_("category").select("*").order("parent_id").execute()
+            categories = await self.repository.get_all_categories()
         except Exception as e:
             raise AppException(f"Failed to retrieve categories: {str(e)}", status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        categories = result.data
-        tree = {}
+        tree: dict[int, CategoryResponse] = {}
         for category in categories:  # id category_name parent_id
             if category["parent_id"] is None:
                 tree[category["id"]] = CategoryResponse(id=category["id"], category_name=category["category_name"])
@@ -52,29 +54,34 @@ class CategoriesService:
 
     async def create_subcategory(self, category_name: str, parent_id: int) -> CategoryItem:
         try:
-            parent_result = await self.client.from_("category").select("id, parent_id").eq("id", parent_id).execute()
+            parent = await self.repository.get_category_by_id(parent_id)
         except Exception as e:
-            raise AppException(f"Failed Retrieving the parent {str(e)}", status.HTTP_500_INTERNAL_SERVER_ERROR)
+            raise AppException(f"Failed retrieving the parent: {str(e)}", status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        if not parent_result.data:
+        if not parent:
             raise CategoryNotFoundError()
 
-        if parent_result.data[0]["parent_id"] is not None:
+        if parent["parent_id"] is not None:
             raise SubCategoryCannotHaveChildrenError()
 
         try:
-            insert_result = await self.client.from_("category").insert({"category_name": category_name, "parent_id": parent_id}).execute()
+            response = await self.repository.create_category(category_name, parent_id)
         except Exception as e:
-            raise AppException(f"Failed inserting the data {str(e)}", status.HTTP_500_INTERNAL_SERVER_ERROR)
+            raise AppException(f"Failed inserting the data: {str(e)}", status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        response = insert_result.data[0]
         return CategoryItem(id=response["id"], category_name=response["category_name"])
 
     async def delete_category(self, category_id: int) -> None:
         try:
-            result = await self.client.from_("category").delete().eq("id", category_id).execute()
+            product_count = await self.repository.get_products_count_for_category(category_id)
+            if product_count > 0:
+                raise CategoryHasProductsError(product_count)
+
+            result = await self.repository.delete_category(category_id)
+        except CategoryHasProductsError:
+            raise
         except Exception as e:
             raise AppException(f"Failed deleting category {str(e)}", status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        if not result.data:
+        if not result:
             raise CategoryNotFoundError()

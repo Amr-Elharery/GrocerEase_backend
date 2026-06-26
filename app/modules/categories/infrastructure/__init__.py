@@ -1,0 +1,1 @@
+"""Categories infrastructure package."""
