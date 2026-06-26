@@ -50,8 +50,8 @@ class ShopsRepositorySupabase:
                 created_at,
                 updated_at,
                 area_id
-            """).eq("id", shop_id).single().execute()
-            return response.data
+            """).eq("id", shop_id).execute()
+            return response.data[0] if response.data else None
         except Exception as e:
             print(f"Error fetching shop: {e}")
             raise e
@@ -72,11 +72,11 @@ class ShopsRepositorySupabase:
                 created_at,
                 updated_at,
                 area_id
-            """).eq("owner_id", owner_id).eq("is_active", True).single().execute()
-            return response.data
+            """).eq("owner_id", owner_id).eq("is_active", True).execute()
+            return response.data[0] if response.data else None
         except Exception as e:
             print(f"Error fetching shop by owner: {e}")
-            return None
+            raise e
 
     async def create_shop(self, payload: dict):
         try:
