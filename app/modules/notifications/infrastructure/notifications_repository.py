@@ -14,7 +14,12 @@ SELECT_FIELDS = """
     read_at,
     created_at,
     notification:notifications (
-        *
+        id,
+        title,
+        body,
+        type,
+        data,
+        created_at
     )
 """
 
@@ -71,4 +76,44 @@ class NotificationsRepositorySupabase:
             return response.data
         except Exception as e:
             print(f"Error marking notification as read: {e}")
+            raise e
+
+    async def create_notification_for_user(self, user_id: str, title: str, body: str, type: str = None, data: dict[str, Any] = None):
+        notification = None
+        try:
+            notification_response = await (
+                self.client.from_("notifications")
+                .insert({
+                    "title": title,
+                    "body": body,
+                    "type": type,
+                    "data": data,
+                })
+                .execute()
+            )
+            notification = notification_response.data[0] if notification_response.data else None
+            if not notification:
+                raise Exception("Failed to create notification")
+
+            user_notification_response = await (
+                self.client.from_("user_notifications")
+                .insert({
+                    "user_id": user_id,
+                    "notification_id": notification["id"],
+                    "is_read": False,
+                    "read_at": None,
+                })
+                .execute()
+            )
+            if not user_notification_response.data:
+                raise Exception("Failed to create user notification")
+
+            return user_notification_response.data[0]
+        except Exception as e:
+            if notification:
+                try:
+                    await self.client.from_("notifications").delete().eq("id", notification["id"]).execute()
+                except Exception as rollback_error:
+                    print(f"Error rolling back notification creation: {rollback_error}")
+            print(f"Error sending notification to user: {e}")
             raise e
