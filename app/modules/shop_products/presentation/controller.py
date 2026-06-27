@@ -7,9 +7,9 @@ class ShopProductsController:
     def __init__(self, service: ShopProductsService = Depends(ShopProductsService)) -> None:
         self.service = service
 
-    async def get_all_shop_products(self, shop_id: int, limit: int = 10, offset: int = 0):
+    async def get_all_shop_products(self, shop_id: int, is_manager: bool = False, limit: int = 10, offset: int = 0):
         try:
-            return await self.service.get_all_shop_products(shop_id, limit, offset)
+            return await self.service.get_all_shop_products(shop_id, is_manager, limit, offset)
         except Exception as e:
             raise e
 
@@ -28,6 +28,12 @@ class ShopProductsController:
     async def update_shop_product(self, shop_product_id: int, payload: UpdateShopProductRequest, requester_id: str) -> ShopProductResponse:
         try:
             return await self.service.update_shop_product(shop_product_id, payload, requester_id)
+        except Exception as e:
+            raise e
+
+    async def toggle_availability(self, shop_product_id: int, is_available: bool, requester_id: str) -> ShopProductResponse:
+        try:
+            return await self.service.toggle_availability(shop_product_id, is_available, requester_id)
         except Exception as e:
             raise e
 
