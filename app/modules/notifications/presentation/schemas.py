@@ -8,7 +8,6 @@ class NotificationItem(BaseModel):
     id: int
     title: str
     body: str
-    type: str | None = None
     data: dict[str, Any] | None = None
     created_at: datetime | None = None
 

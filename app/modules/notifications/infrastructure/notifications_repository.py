@@ -17,7 +17,6 @@ SELECT_FIELDS = """
         id,
         title,
         body,
-        type,
         data,
         created_at
     )
@@ -78,7 +77,7 @@ class NotificationsRepositorySupabase:
             print(f"Error marking notification as read: {e}")
             raise e
 
-    async def create_notification_for_user(self, user_id: str, title: str, body: str, type: str = None, data: dict[str, Any] = None):
+    async def create_notification_for_user(self, user_id: str, title: str, body: str, data: dict[str, Any] = None):
         notification = None
         try:
             notification_response = await (
@@ -86,7 +85,6 @@ class NotificationsRepositorySupabase:
                 .insert({
                     "title": title,
                     "body": body,
-                    "type": type,
                     "data": data,
                 })
                 .execute()

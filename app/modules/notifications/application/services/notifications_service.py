@@ -4,8 +4,6 @@ from typing import Any
 from fastapi import Depends
 from starlette import status
 
-from postgrest.exceptions import APIError
-
 from app.core.exceptions import AppException, NotFoundException
 from app.modules.auth.infrastructure.auth_repository_supabase import AuthRepositorySupabase
 from app.modules.notifications.domain.errors import NotificationNotFoundError
@@ -59,13 +57,9 @@ class NotificationsService:
 
         return {"message": "Notification marked as read successfully"}
 
-    async def send_to_user(self, user_id: str, title: str, body: str, type: str = None, data: dict[str, Any] = None) -> dict:
+    async def send_to_user(self, user_id: str, title: str, body: str, data: dict[str, Any] = None) -> dict:
         try:
             user = await self.auth_repository.get_user_by_id(user_id)
-        except APIError as e:
-            if getattr(e, "code", None) == "PGRST116":
-                raise NotFoundException("User")
-            raise AppException(f"Failed to retrieve user: {str(e)}", status.HTTP_500_INTERNAL_SERVER_ERROR)
         except Exception as e:
             raise AppException(f"Failed to retrieve user: {str(e)}", status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -73,6 +67,11 @@ class NotificationsService:
             raise NotFoundException("User")
 
         try:
-            return await self.repository.create_notification_for_user(user_id, title, body, type, data)
+            return await self.repository.create_notification_for_user(user_id, title, body, data)
         except Exception as e:
             raise AppException(f"Failed to send notification: {str(e)}", status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    async def send_welcome_notification(self, user_id: str) -> dict:
+        title = "Welcome to ZAD!"
+        body = "Thank you for joining ZAD. We're excited to have you on board!"
+        return await self.send_to_user(user_id, title, body)
