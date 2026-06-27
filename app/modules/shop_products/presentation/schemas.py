@@ -37,4 +37,5 @@ class ShopProductResponse(ShopProductBase):
     shop_id: int
     product_id: int
     is_active: bool | None = None
+    is_available: bool | None = None
     product: ProductResponse | None = None
