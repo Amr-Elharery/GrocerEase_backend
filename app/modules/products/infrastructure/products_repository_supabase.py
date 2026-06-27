@@ -129,6 +129,18 @@ class ProductsRepositorySupabase:
                               image_url,
                               variant,
                               is_primary
+                          ),
+
+                          shops:shop_product (
+                            available_stock,
+                            price,
+                            is_active,
+                            is_available,
+                            shop:shop_id (
+                              id,
+                              shop_name,
+                              logo_url
+                            )
                           )
         """).eq("id", product_id).single().execute()
         return response.data

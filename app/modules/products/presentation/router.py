@@ -8,13 +8,14 @@ from app.modules.products.presentation.schemas import (
     CreateProductRequest,
     CreateProductRequestAsForm,
     UpdateProductRequest,
+    ProductsResponse,
     ProductResponse,
 )
 from app.modules.products.domain.errors import ProductsError
 
 router = APIRouter(prefix="/products", tags=["products"])
 
-@router.get("/", response_model=List[ProductResponse], status_code=status.HTTP_200_OK)
+@router.get("/", response_model=List[ProductsResponse], status_code=status.HTTP_200_OK)
 async def get_all_products(limit: int = 10, offset: int = 0, search: str = None ,controller: ProductsController = Depends(ProductsController)):
     try:
         return await controller.get_all_products(limit, offset, search)
