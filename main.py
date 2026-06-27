@@ -12,6 +12,7 @@ from app.modules.shop_products.presentation.router import router as shop_product
 from app.modules.product_requests.presentation.router import router as product_requests_router
 from app.modules.areas.presentation.router import router as areas_router
 from app.modules.notifications.presentation.router import router as notifications_router
+from app.modules.addresses.presentation.router import router as addresses_router
 
 configure_logging()
 
@@ -41,6 +42,7 @@ api_router.include_router(shop_products_router)
 api_router.include_router(product_requests_router)
 api_router.include_router(areas_router)
 api_router.include_router(notifications_router)
+api_router.include_router(addresses_router)
 app.include_router(api_router)
 
 @app.get("/", tags=["root"])
