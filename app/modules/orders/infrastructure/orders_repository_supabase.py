@@ -121,6 +121,56 @@ class OrdersRepositorySupabase:
             print(f"Error fetching order group: {e}")
             raise e
 
+    async def get_all_orders_admin(self, limit: int = 10, offset: int = 0):
+        try:
+            response = await self.client.from_("orders").select("""
+                id,
+                customer_id,
+                shop_id,
+                order_group_id,
+                status,
+                subtotal,
+                delivery_fee,
+                payment_method,
+                created_at,
+                customer_address_id,
+                order_items (
+                    id,
+                    shop_product_id,
+                    quantity,
+                    total
+                )
+            """).order("created_at", desc=True).range(offset, offset + limit - 1).execute()
+            return response.data
+        except Exception as e:
+            print(f"Error fetching all orders: {e}")
+            raise e
+
+    async def get_orders_by_shop(self, shop_id: int, limit: int = 10, offset: int = 0):
+        try:
+            response = await self.client.from_("orders").select("""
+                id,
+                customer_id,
+                shop_id,
+                order_group_id,
+                status,
+                subtotal,
+                delivery_fee,
+                payment_method,
+                created_at,
+                customer_address_id,
+                order_items (
+                    id,
+                    shop_product_id,
+                    quantity,
+                    total
+                )
+            """).eq("shop_id", shop_id).order("created_at", desc=True).range(offset, offset + limit - 1).execute()
+            return response.data
+        except Exception as e:
+            print(f"Error fetching shop orders: {e}")
+            raise e
+
     async def get_active_order_for_customer(self, customer_id: str):
         try:
             response = await self.client.from_("orders").select("id, status").eq("customer_id", customer_id).not_.in_("status", ["delivered", "cancelled"]).execute()

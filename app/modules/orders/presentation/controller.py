@@ -13,9 +13,9 @@ class OrdersController:
         except Exception as e:
             raise e
 
-    async def get_order(self, order_id: int, customer_id: str) -> OrderResponse:
+    async def get_order(self, order_id: int, current_user: dict) -> OrderResponse:
         try:
-            return await self.service.get_order(order_id, customer_id)
+            return await self.service.get_order(order_id, current_user)
         except Exception as e:
             raise e
 
@@ -28,6 +28,18 @@ class OrdersController:
     async def create_optimization_order(self, payload: CreateOptimizationOrderRequest, customer_id: str) -> OrderGroupResponse:
         try:
             return await self.service.create_optimization_order(payload, customer_id)
+        except Exception as e:
+            raise e
+
+    async def get_all_orders_admin(self, limit: int = 10, offset: int = 0):
+        try:
+            return await self.service.get_all_orders_admin(limit, offset)
+        except Exception as e:
+            raise e
+
+    async def get_shop_orders(self, owner_id: str, limit: int = 10, offset: int = 0):
+        try:
+            return await self.service.get_shop_orders(owner_id, limit, offset)
         except Exception as e:
             raise e
 

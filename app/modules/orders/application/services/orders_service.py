@@ -1,6 +1,7 @@
 from fastapi import Depends, HTTPException, status
 from app.modules.orders.infrastructure.orders_repository_supabase import OrdersRepositorySupabase
 from app.modules.addresses.application.services.addresses_service import AddressesService
+from app.modules.shops.infrastructure.shops_repository_supabase import ShopsRepositorySupabase
 
 DELIVERY_FEE = 25.00
 
@@ -10,9 +11,11 @@ class OrdersService:
         self,
         repository: OrdersRepositorySupabase = Depends(OrdersRepositorySupabase),
         addresses_service: AddressesService = Depends(AddressesService),
+        shops_repository: ShopsRepositorySupabase = Depends(ShopsRepositorySupabase),
     ) -> None:
         self.repository = repository
         self.addresses_service = addresses_service
+        self.shops_repository = shops_repository
 
     async def get_all_orders(self, customer_id: str, limit: int = 10, offset: int = 0):
         try:
@@ -20,13 +23,25 @@ class OrdersService:
         except Exception as e:
             raise e
 
-    async def get_order(self, order_id: int, customer_id: str):
+    async def get_order(self, order_id: int, current_user: dict):
         try:
             order = await self.repository.get_order(order_id)
             if not order:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order not found")
-            if order.get("customer_id") != customer_id:
-                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You are not the owner of this order")
+
+            roles = current_user.get("roles", [])
+            user_id = current_user.get("id")
+
+            if "admin" in roles:
+                return order
+            elif "vendor" in roles:
+                shop = await self.shops_repository.get_shop_by_owner(user_id)
+                if not shop or order.get("shop_id") != shop["id"]:
+                    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="This order does not belong to your shop")
+            else:
+                if order.get("customer_id") != user_id:
+                    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You are not the owner of this order")
+
             return order
         except Exception as e:
             raise e
@@ -132,6 +147,15 @@ class OrdersService:
             return group
         except Exception as e:
             raise e
+
+    async def get_all_orders_admin(self, limit: int = 10, offset: int = 0):
+        return await self.repository.get_all_orders_admin(limit, offset)
+
+    async def get_shop_orders(self, owner_id: str, limit: int = 10, offset: int = 0):
+        shop = await self.shops_repository.get_shop_by_owner(owner_id)
+        if not shop:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="You do not have a shop")
+        return await self.repository.get_orders_by_shop(shop["id"], limit, offset)
 
     async def _validate_and_calculate(self, items, shop_id: int):
         items_to_insert = []
