@@ -22,7 +22,7 @@ async def get_all_orders_admin(limit: int = 10, offset: int = 0, controller: Ord
 
 
 @router.get("/shop", response_model=List[OrderResponse], status_code=status.HTTP_200_OK)
-async def get_shop_orders(limit: int = 10, offset: int = 0, controller: OrdersController = Depends(OrdersController), current_user=Depends(require_roles(["vendor"]))):
+async def get_shop_orders(limit: int = 10, offset: int = 0, controller: OrdersController = Depends(OrdersController), current_user=Depends(get_current_user), _=Depends(require_roles(["vendor"]))):
     try:
         owner_id = current_user.get("id")
         return await controller.get_shop_orders(owner_id, limit, offset)
