@@ -2,7 +2,6 @@ from fastapi import Depends, HTTPException, status
 from app.modules.orders.infrastructure.orders_repository_supabase import OrdersRepositorySupabase
 from app.modules.addresses.application.services.addresses_service import AddressesService
 from app.modules.shops.infrastructure.shops_repository_supabase import ShopsRepositorySupabase
-from app.modules.shop_products.infrastructure.shop_products_repository_supabase import ShopProductsRepositorySupabase
 
 DELIVERY_FEE = 25.00
 
@@ -13,12 +12,10 @@ class OrdersService:
         repository: OrdersRepositorySupabase = Depends(OrdersRepositorySupabase),
         addresses_service: AddressesService = Depends(AddressesService),
         shops_repository: ShopsRepositorySupabase = Depends(ShopsRepositorySupabase),
-        shop_products_repository: ShopProductsRepositorySupabase = Depends(ShopProductsRepositorySupabase),
     ) -> None:
         self.repository = repository
         self.addresses_service = addresses_service
         self.shops_repository = shops_repository
-        self.shop_products_repository = shop_products_repository
 
     async def get_all_orders(self, customer_id: str, limit: int = 10, offset: int = 0):
         try:
@@ -76,9 +73,6 @@ class OrdersService:
                 item["order_id"] = order["id"]
             await self.repository.create_order_items(items_to_insert)
 
-            for item in items_to_insert:
-                await self.shop_products_repository.decrement_stock(item["shop_product_id"], item["quantity"])
-
             return await self.repository.get_order(order["id"])
         except Exception as e:
             raise e
@@ -114,9 +108,6 @@ class OrdersService:
                 for item in items_to_insert:
                     item["order_id"] = order["id"]
                 await self.repository.create_order_items(items_to_insert)
-
-                for item in items_to_insert:
-                    await self.shop_products_repository.decrement_stock(item["shop_product_id"], item["quantity"])
 
                 created_orders.append(order)
 
