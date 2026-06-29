@@ -21,7 +21,10 @@ class ShopsService:
 
     async def get_shop(self, shop_id: int):
         try:
-            return await self.repository.get_shop(shop_id)
+            shop = await self.repository.get_shop(shop_id)
+            if not shop:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Shop not found")
+            return shop
         except Exception as e:
             raise e
 

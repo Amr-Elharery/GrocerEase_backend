@@ -15,7 +15,15 @@ router = APIRouter(prefix="/shop-products", tags=["shop-products"])
 @router.get("/", response_model=List[ShopProductResponse], status_code=status.HTTP_200_OK)
 async def get_all_shop_products(shop_id: int, limit: int = 10, offset: int = 0, controller: ShopProductsController = Depends(ShopProductsController)):
     try:
-        return await controller.get_all_shop_products(shop_id, limit, offset)
+        return await controller.get_all_shop_products(shop_id, is_manager=False, limit=limit, offset=offset)
+    except Exception as e:
+        raise ShopProductsError(str(e))
+
+
+@router.get("/manage", response_model=List[ShopProductResponse], status_code=status.HTTP_200_OK)
+async def get_shop_products_for_manager(shop_id: int, limit: int = 10, offset: int = 0, controller: ShopProductsController = Depends(ShopProductsController), current_user=Depends(get_current_user)):
+    try:
+        return await controller.get_all_shop_products(shop_id, is_manager=True, limit=limit, offset=offset)
     except Exception as e:
         raise ShopProductsError(str(e))
 
@@ -42,6 +50,24 @@ async def update_shop_product(shop_product_id: int, payload: UpdateShopProductRe
     try:
         requester_id = current_user.get("id")
         return await controller.update_shop_product(shop_product_id, payload, requester_id)
+    except Exception as e:
+        raise ShopProductsError(str(e))
+
+
+@router.patch("/{shop_product_id}/mark-available", response_model=ShopProductResponse, status_code=status.HTTP_200_OK)
+async def mark_available(shop_product_id: int, controller: ShopProductsController = Depends(ShopProductsController), current_user=Depends(get_current_user)):
+    try:
+        requester_id = current_user.get("id")
+        return await controller.toggle_availability(shop_product_id, True, requester_id)
+    except Exception as e:
+        raise ShopProductsError(str(e))
+
+
+@router.patch("/{shop_product_id}/mark-unavailable", response_model=ShopProductResponse, status_code=status.HTTP_200_OK)
+async def mark_unavailable(shop_product_id: int, controller: ShopProductsController = Depends(ShopProductsController), current_user=Depends(get_current_user)):
+    try:
+        requester_id = current_user.get("id")
+        return await controller.toggle_availability(shop_product_id, False, requester_id)
     except Exception as e:
         raise ShopProductsError(str(e))
 

@@ -1,12 +1,14 @@
 from app.modules.auth.infrastructure.auth_repository_supabase import AuthRepositorySupabase
+from app.modules.notifications.application.services.notifications_service import NotificationsService
 from fastapi import Depends
 from app.lib.JWT import jwt_handler
 from datetime import timedelta
 from app.modules.auth.domain.helpers import normalize_roles, mapRoleNameToRoleId
 from app.core.config import settings
 class AuthService:
-    def __init__(self, auth_repository: AuthRepositorySupabase = Depends(AuthRepositorySupabase)):
+    def __init__(self, auth_repository: AuthRepositorySupabase = Depends(AuthRepositorySupabase), notification_service: NotificationsService = Depends(NotificationsService)):
         self.auth_repository = auth_repository
+        self.notification_service = notification_service
 
     async def register_user(self, registration_data, role: str = "customer"):
         registration_data = registration_data.dict().copy()
@@ -18,6 +20,7 @@ class AuthService:
         }
         sign_up_response = await self.auth_repository.sign_up(registration_data)
         await self.auth_repository.add_role_to_user(sign_up_response.user.id, mapRoleNameToRoleId(role))
+        await self.notification_service.send_welcome_notification(sign_up_response.user.id)
 
     async def sign_in_with_password(self, login_data):
         login_response = await self.auth_repository.sign_in_with_password(login_data.dict())

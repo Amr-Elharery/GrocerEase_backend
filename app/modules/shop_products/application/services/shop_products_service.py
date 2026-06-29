@@ -12,9 +12,9 @@ class ShopProductsService:
         self.repository = repository
         self.shops_repository = shops_repository
 
-    async def get_all_shop_products(self, shop_id: int, limit: int = 10, offset: int = 0):
+    async def get_all_shop_products(self, shop_id: int, is_manager: bool = False, limit: int = 10, offset: int = 0):
         try:
-            return await self.repository.get_all_shop_products(shop_id, limit, offset)
+            return await self.repository.get_all_shop_products(shop_id, is_manager, limit, offset)
         except Exception as e:
             raise e
 
@@ -57,6 +57,20 @@ class ShopProductsService:
 
             data = {k: v for k, v in payload.dict().items() if v is not None}
             return await self.repository.update_shop_product(shop_product_id, data)
+        except Exception as e:
+            raise e
+
+    async def toggle_availability(self, shop_product_id: int, is_available: bool, requester_id: str):
+        try:
+            shop_product = await self.repository.get_shop_product(shop_product_id)
+            if not shop_product:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Shop product not found")
+
+            shop = await self.shops_repository.get_shop(shop_product.get("shop_id"))
+            if shop.get("owner_id") != requester_id:
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You are not the owner of this shop")
+
+            return await self.repository.toggle_availability(shop_product_id, is_available)
         except Exception as e:
             raise e
 
