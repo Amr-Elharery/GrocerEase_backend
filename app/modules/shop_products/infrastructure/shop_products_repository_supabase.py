@@ -91,6 +91,21 @@ class ShopProductsRepositorySupabase:
             print(f"Error deleting shop product: {e}")
             raise e
 
+    async def decrement_stock(self, shop_product_id: int, quantity: int):
+        try:
+            current = await self.client.from_("shop_product").select("available_stock").eq("id", shop_product_id).execute()
+            if not current.data:
+                return None
+            current_stock = current.data[0]["available_stock"]
+            if current_stock is None:
+                return None
+            new_stock = max(0, current_stock - quantity)
+            response = await self.client.from_("shop_product").update({"available_stock": new_stock}).eq("id", shop_product_id).execute()
+            return response.data
+        except Exception as e:
+            print(f"Error decrementing stock: {e}")
+            raise e
+
     async def get_by_shop_and_product(self, shop_id: int, product_id: int):
         try:
             response = await self.client.from_("shop_product").select("id, is_active").eq("shop_id", shop_id).eq("product_id", product_id).execute()
