@@ -47,6 +47,14 @@ async def register(payload: RegisterRequest, controller: AuthController = Depend
     except Exception as e:
         raise AuthenticationError(str(e))
 
+@router.post("/delivery/register", status_code=status.HTTP_201_CREATED)
+async def register(payload: RegisterRequest, controller: AuthController = Depends(AuthController)):
+    try:
+        await controller.register(payload, role="delivery")
+        return {"message": "User registered successfully"}
+    except Exception as e:
+        raise AuthenticationError(str(e))
+
 @router.post("/login", response_model=LoginResponse, status_code=status.HTTP_200_OK)
 async def login(payload: LoginRequest, controller: AuthController = Depends(AuthController)):
     try:

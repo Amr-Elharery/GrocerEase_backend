@@ -3,6 +3,8 @@ from app.modules.orders.infrastructure.orders_repository_supabase import OrdersR
 from app.modules.addresses.application.services.addresses_service import AddressesService
 from app.modules.shops.infrastructure.shops_repository_supabase import ShopsRepositorySupabase
 from app.modules.shop_products.infrastructure.shop_products_repository_supabase import ShopProductsRepositorySupabase
+from app.modules.notifications.application.services.notifications_service import NotificationsService
+from app.modules.auth.infrastructure.auth_repository_supabase import AuthRepositorySupabase
 
 DELIVERY_FEE = 25.00
 
@@ -14,11 +16,15 @@ class OrdersService:
         addresses_service: AddressesService = Depends(AddressesService),
         shops_repository: ShopsRepositorySupabase = Depends(ShopsRepositorySupabase),
         shop_products_repository: ShopProductsRepositorySupabase = Depends(ShopProductsRepositorySupabase),
+        notifications_service: NotificationsService = Depends(NotificationsService),
+        auth_repository: AuthRepositorySupabase = Depends(AuthRepositorySupabase),
     ) -> None:
         self.repository = repository
         self.addresses_service = addresses_service
         self.shops_repository = shops_repository
         self.shop_products_repository = shop_products_repository
+        self.notifications_service = notifications_service
+        self.auth_repository = auth_repository
 
     async def get_all_orders(self, customer_id: str, limit: int = 10, offset: int = 0):
         try:
@@ -79,6 +85,8 @@ class OrdersService:
             for item in items_to_insert:
                 await self.shop_products_repository.decrement_stock(item["shop_product_id"], item["quantity"])
 
+            await self._notify_delivery_users(order["id"])
+
             return await self.repository.get_order(order["id"])
         except Exception as e:
             raise e
@@ -119,6 +127,9 @@ class OrdersService:
                     await self.shop_products_repository.decrement_stock(item["shop_product_id"], item["quantity"])
 
                 created_orders.append(order)
+
+            for created_order in created_orders:
+                await self._notify_delivery_users(created_order["id"])
 
             return await self.repository.get_order_group(order_group_id)
         except Exception as e:
@@ -165,6 +176,22 @@ class OrdersService:
         if not shop:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="You do not have a shop")
         return await self.repository.get_orders_by_shop(shop["id"], limit, offset)
+
+    async def _notify_delivery_users(self, order_id: int):
+        try:
+            delivery_user_ids = await self.auth_repository.get_users_by_role("delivery")
+            for user_id in delivery_user_ids:
+                try:
+                    await self.notifications_service.send_to_user(
+                        user_id=user_id,
+                        title="New Order Available",
+                        body="A new order is available for pickup. Open the app to accept it.",
+                        data={"order_id": order_id},
+                    )
+                except Exception:
+                    pass
+        except Exception:
+            pass
 
     async def _validate_and_calculate(self, items, shop_id: int):
         items_to_insert = []

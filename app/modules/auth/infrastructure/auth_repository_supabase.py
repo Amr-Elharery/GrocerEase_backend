@@ -56,6 +56,15 @@ class AuthRepositorySupabase:
         response = await self.supabase_client.auth.update_user({"password": new_password})
         return response
 
+    async def get_users_by_role(self, role_name: str):
+        response = await self.supabase_admin_client.from_("users_roles").select("""
+            user_id,
+            roles:role_id (
+                role_name
+            )
+        """).eq("roles.role_name", role_name).execute()
+        return [row["user_id"] for row in response.data if row.get("roles") and row["roles"].get("role_name") == role_name]
+
     async def update_user_profile(self, user_id: str, profile_data: dict):
         await self.supabase_admin_client.auth.admin.update_user_by_id(
             user_id,
