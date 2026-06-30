@@ -7,6 +7,7 @@ def mapRoleNameToRoleId(role_name):
     role_mapping = {
         "admin": 1,
         "customer": 2,
-        "vendor": 3
+        "vendor": 3,
+        "delivery": 4,
     }
     return role_mapping.get(role_name, None)

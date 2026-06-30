@@ -14,6 +14,7 @@ from app.modules.areas.presentation.router import router as areas_router
 from app.modules.notifications.presentation.router import router as notifications_router
 from app.modules.addresses.presentation.router import router as addresses_router
 from app.modules.orders.presentation.router import router as orders_router
+from app.modules.deliveries.presentation.router import router as deliveries_router
 from app.modules.recommendations.presentation.router import router as recommendations_router
 configure_logging()
 
@@ -45,6 +46,7 @@ api_router.include_router(areas_router)
 api_router.include_router(notifications_router)
 api_router.include_router(addresses_router)
 api_router.include_router(orders_router)
+api_router.include_router(deliveries_router)
 api_router.include_router(recommendations_router)
 app.include_router(api_router)
 

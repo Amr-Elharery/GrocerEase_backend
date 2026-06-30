@@ -57,6 +57,54 @@ class OrdersRepositorySupabase:
             print(f"Error fetching order: {e}")
             raise e
 
+    async def get_order_for_delivery(self, order_id: int):
+        try:
+            response = await self.client.from_("orders").select("""
+                id,
+                customer_id,
+                shop_id,
+                order_group_id,
+                status,
+                subtotal,
+                delivery_fee,
+                payment_method,
+                created_at,
+                order_items (
+                    id,
+                    shop_product_id,
+                    quantity,
+                    total
+                ),
+                customer_address:customer_address_id (
+                    id,
+                    street,
+                    building,
+                    floor,
+                    apt_number,
+                    latitude,
+                    longitude,
+                    additional_directions,
+                    label,
+                    area:area_id (
+                        id,
+                        area_name,
+                        city_name
+                    )
+                ),
+                shop:shop_id (
+                    id,
+                    shop_name,
+                    address,
+                    latitude,
+                    longitude,
+                    phone_number
+                )
+            """).eq("id", order_id).execute()
+            return response.data[0] if response.data else None
+        except Exception as e:
+            print(f"Error fetching order for delivery: {e}")
+            raise e
+
     async def create_order(self, payload: dict):
         try:
             response = await self.client.from_("orders").insert(payload).execute()
@@ -119,6 +167,53 @@ class OrdersRepositorySupabase:
             return response.data[0] if response.data else None
         except Exception as e:
             print(f"Error fetching order group: {e}")
+            raise e
+
+    async def get_available_orders_for_delivery(self, limit: int = 10, offset: int = 0):
+        try:
+            response = await self.client.from_("orders").select("""
+                id,
+                customer_id,
+                shop_id,
+                status,
+                subtotal,
+                delivery_fee,
+                payment_method,
+                created_at,
+                customer_address_id,
+                order_items (
+                    id,
+                    shop_product_id,
+                    quantity,
+                    total
+                ),
+                customer_address:customer_address_id (
+                    id,
+                    street,
+                    building,
+                    floor,
+                    apt_number,
+                    latitude,
+                    longitude,
+                    label,
+                    area:area_id (
+                        id,
+                        area_name,
+                        city_name
+                    )
+                ),
+                shop:shop_id (
+                    id,
+                    shop_name,
+                    address,
+                    latitude,
+                    longitude,
+                    phone_number
+                )
+            """).in_("status", "pending").order("created_at", desc=True).range(offset, offset + limit - 1).execute()
+            return response.data
+        except Exception as e:
+            print(f"Error fetching available orders: {e}")
             raise e
 
     async def get_all_orders_admin(self, limit: int = 10, offset: int = 0):
