@@ -128,3 +128,13 @@ class ShopProductsRepositorySupabase:
         except Exception as e:
             print(f"Error checking shop product existence: {e}")
             raise e
+
+    async def get_products_for_shops(self, shop_ids: list[int]) -> list[dict]:
+        try:
+            response = await self.client.from_("shop_product").select(
+                "id, shop_id, product_id, price"
+            ).in_("shop_id", shop_ids).eq("is_active", True).eq("is_available", True).execute()
+            return response.data
+        except Exception as e:
+            print(f"Error fetching products for shops: {e}")
+            raise e
