@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     WEB_URL: str
     MOBILE_URL: str
 
+    ORS_API_KEY: str
+
     @property
     def is_development(self) -> bool:
         return self.APP_ENV == "development"

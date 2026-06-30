@@ -15,6 +15,7 @@ from app.modules.notifications.presentation.router import router as notification
 from app.modules.addresses.presentation.router import router as addresses_router
 from app.modules.orders.presentation.router import router as orders_router
 from app.modules.deliveries.presentation.router import router as deliveries_router
+from app.modules.optimization.presentation.router import router as optimization_router
 from app.modules.recommendations.presentation.router import router as recommendations_router
 configure_logging()
 
@@ -47,6 +48,7 @@ api_router.include_router(notifications_router)
 api_router.include_router(addresses_router)
 api_router.include_router(orders_router)
 api_router.include_router(deliveries_router)
+api_router.include_router(optimization_router)
 api_router.include_router(recommendations_router)
 app.include_router(api_router)
 
