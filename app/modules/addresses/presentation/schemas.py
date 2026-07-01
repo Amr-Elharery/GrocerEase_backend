@@ -43,5 +43,6 @@ class AddressResponse(BaseModel):
     latitude: float
     longitude: float
     label: str
+    is_default: bool
     additional_directions: Optional[str] = None
     area: Optional[AreaSummary] = None

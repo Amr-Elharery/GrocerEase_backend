@@ -32,6 +32,12 @@ class AddressesController:
         except Exception as e:
             raise e
 
+    async def set_default_address(self, address_id: int, user_id: str):
+        try:
+            return await self.service.set_default_address(address_id, user_id)
+        except Exception as e:
+            raise e
+
     async def delete_address(self, address_id: int, user_id: str):
         try:
             await self.service.delete_address(address_id, user_id)
