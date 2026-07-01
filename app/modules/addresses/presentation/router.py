@@ -45,6 +45,15 @@ async def update_address(address_id: int, payload: UpdateAddressRequest, control
         raise e
 
 
+@router.patch("/{address_id}/default", response_model=AddressResponse, status_code=status.HTTP_200_OK)
+async def set_default_address(address_id: int, controller: AddressesController = Depends(AddressesController), current_user=Depends(get_current_user)):
+    try:
+        user_id = current_user.get("id")
+        return await controller.set_default_address(address_id, user_id)
+    except Exception as e:
+        raise e
+
+
 @router.delete("/{address_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_address(address_id: int, controller: AddressesController = Depends(AddressesController), current_user=Depends(get_current_user)):
     try:

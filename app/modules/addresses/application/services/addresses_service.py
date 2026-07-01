@@ -25,7 +25,18 @@ class AddressesService:
     async def create_address(self, payload, user_id: str):
         data = payload.dict()
         data["user_id"] = user_id
+        has_existing = await self.repository.has_any_address(user_id)
+        data["is_default"] = not has_existing
         return await self.repository.create_address(data)
+
+    async def set_default_address(self, address_id: int, user_id: str):
+        address = await self.repository.get_address(address_id)
+        if not address:
+            raise AddressNotFoundError()
+        if address.get("user_id") != user_id:
+            raise AddressNotOwnedError()
+        await self.repository.clear_default(user_id)
+        return await self.repository.update_address(address_id, {"is_default": True})
 
     async def update_address(self, address_id: int, payload, user_id: str):
         address = await self.repository.get_address(address_id)
@@ -43,3 +54,7 @@ class AddressesService:
         if address.get("user_id") != user_id:
             raise AddressNotOwnedError()
         await self.repository.delete_address(address_id)
+        if address.get("is_default"):
+            remaining = await self.repository.get_all_addresses(user_id)
+            if remaining:
+                await self.repository.update_address(remaining[0]["id"], {"is_default": True})
