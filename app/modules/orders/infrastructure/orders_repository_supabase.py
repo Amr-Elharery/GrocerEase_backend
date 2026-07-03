@@ -149,7 +149,9 @@ class OrdersRepositorySupabase:
                 created_at,
                 orders (
                     id,
+                    customer_id,
                     shop_id,
+                    order_group_id,
                     status,
                     subtotal,
                     delivery_fee,
@@ -175,6 +177,7 @@ class OrdersRepositorySupabase:
                 id,
                 customer_id,
                 shop_id,
+                order_group_id,
                 status,
                 subtotal,
                 delivery_fee,
@@ -210,7 +213,7 @@ class OrdersRepositorySupabase:
                     longitude,
                     phone_number
                 )
-            """).in_("status", "pending").order("created_at", desc=True).range(offset, offset + limit - 1).execute()
+            """).eq("status", "pending").order("created_at", desc=True).range(offset, offset + limit - 1).execute()
             return response.data
         except Exception as e:
             print(f"Error fetching available orders: {e}")
