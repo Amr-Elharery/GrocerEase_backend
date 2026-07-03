@@ -10,25 +10,36 @@ class DeliveriesRepositorySupabase:
     def __init__(self, admin_client: AsyncClient = Depends(get_admin_client)) -> None:
         self.client = admin_client
 
-    async def get_assignment_by_order(self, order_id: int) -> Optional[Any]:
-        response = await self.client.from_("delivery_assignment").select("*").eq("order_id", order_id).execute()
+    async def get_delivery_by_order(self, order_id: int) -> Optional[Any]:
+        response = await self.client.from_("deliveries").select("*").eq("order_id", order_id).execute()
         return response.data[0] if response.data else None
 
-    async def get_assignment(self, assignment_id: int) -> Optional[Any]:
-        response = await self.client.from_("delivery_assignment").select("*").eq("id", assignment_id).execute()
-        return response.data[0] if response.data else None
-
-    async def get_my_assignments(self, delivery_user_id: str) -> list[Any]:
-        response = await self.client.from_("delivery_assignment").select("*").eq("delivery_user_id", delivery_user_id).execute()
+    async def get_deliveries_by_orders(self, order_ids: list[int]) -> list[Any]:
+        if not order_ids:
+            return []
+        response = await self.client.from_("deliveries").select("*").in_("order_id", order_ids).execute()
         return response.data or []
 
-    async def create_assignment(self, order_id: int, delivery_user_id: str) -> Optional[Any]:
-        response = await self.client.from_("delivery_assignment").insert({
+    async def get_delivery(self, delivery_id: int) -> Optional[Any]:
+        response = await self.client.from_("deliveries").select("*").eq("id", delivery_id).execute()
+        return response.data[0] if response.data else None
+
+    async def get_my_deliveries(self, delivery_profile_id: int) -> list[Any]:
+        response = await self.client.from_("deliveries").select("*").eq("delivery_id", delivery_profile_id).execute()
+        return response.data or []
+
+    async def create_delivery(self, order_id: int, delivery_profile_id: int) -> Optional[Any]:
+        response = await self.client.from_("deliveries").insert({
             "order_id": order_id,
-            "delivery_user_id": delivery_user_id,
+            "delivery_id": delivery_profile_id,
         }).execute()
         return response.data[0] if response.data else None
 
-    async def delete_assignment(self, assignment_id: int) -> Any:
-        response = await self.client.from_("delivery_assignment").delete().eq("id", assignment_id).execute()
+    async def create_deliveries_bulk(self, order_ids: list[int], delivery_profile_id: int) -> list[Any]:
+        payload = [{"order_id": order_id, "delivery_id": delivery_profile_id} for order_id in order_ids]
+        response = await self.client.from_("deliveries").insert(payload).execute()
+        return response.data or []
+
+    async def delete_delivery(self, delivery_id: int) -> Any:
+        response = await self.client.from_("deliveries").delete().eq("id", delivery_id).execute()
         return response.data

@@ -18,7 +18,7 @@ class RouteResponse(BaseModel):
     route: List[str]
     route_indices: List[int]
     legs: List[Dict]
-    total_distance_meters: int
+    total_distance_meters: float
     total_distance_km: float
     estimated_cost: float
     num_stops: int

@@ -5,8 +5,9 @@ from app.modules.shops.infrastructure.shops_repository_supabase import ShopsRepo
 from app.modules.shop_products.infrastructure.shop_products_repository_supabase import ShopProductsRepositorySupabase
 from app.modules.notifications.application.services.notifications_service import NotificationsService
 from app.modules.auth.infrastructure.auth_repository_supabase import AuthRepositorySupabase
+from app.modules.optimization.domain.optimizer import _build_matrix, _best_route, calculate_delivery_cost
 
-DELIVERY_FEE = 25.00
+FALLBACK_DELIVERY_FEE = 25.00
 
 
 class OrdersService:
@@ -61,9 +62,12 @@ class OrdersService:
             if active_order:
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You already have an active order. Wait until it is delivered or completed before placing a new one.")
 
-            await self.addresses_service.get_address(payload.customer_address_id, customer_id)
+            address = await self.addresses_service.get_address(payload.customer_address_id, customer_id)
 
             subtotal, items_to_insert = await self._validate_and_calculate(payload.items, payload.shop_id)
+
+            customer_coords = (address["latitude"], address["longitude"])
+            delivery_fee = await self._calculate_delivery_fee([payload.shop_id], customer_coords)
 
             order_data = {
                 "customer_id": customer_id,
@@ -72,7 +76,7 @@ class OrdersService:
                 "payment_method": payload.payment_method,
                 "status": "pending",
                 "subtotal": subtotal,
-                "delivery_fee": DELIVERY_FEE,
+                "delivery_fee": delivery_fee,
                 "order_group_id": None,
             }
 
@@ -97,10 +101,15 @@ class OrdersService:
             if active_order:
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You already have an active order. Wait until it is delivered or completed before placing a new one.")
 
-            await self.addresses_service.get_address(payload.customer_address_id, customer_id)
+            address = await self.addresses_service.get_address(payload.customer_address_id, customer_id)
 
             order_group = await self.repository.create_order_group(customer_id)
             order_group_id = order_group["id"]
+
+            customer_coords = (address["latitude"], address["longitude"])
+            shop_ids = [order_payload.shop_id for order_payload in payload.orders]
+            group_delivery_fee = await self._calculate_delivery_fee(shop_ids, customer_coords)
+            per_order_delivery_fee = round(group_delivery_fee / len(payload.orders), 2)
 
             created_orders = []
             for order_payload in payload.orders:
@@ -113,7 +122,7 @@ class OrdersService:
                     "payment_method": payload.payment_method,
                     "status": "pending",
                     "subtotal": subtotal,
-                    "delivery_fee": DELIVERY_FEE,
+                    "delivery_fee": per_order_delivery_fee,
                     "order_group_id": order_group_id,
                 }
 
@@ -192,6 +201,24 @@ class OrdersService:
                     pass
         except Exception:
             pass
+
+    async def _calculate_delivery_fee(self, shop_ids: list[int], customer_coords: tuple) -> float:
+        unique_shop_ids = list(dict.fromkeys(shop_ids))
+
+        shop_coords = []
+        for shop_id in unique_shop_ids:
+            shop = await self.shops_repository.get_shop(shop_id)
+            if not shop or shop.get("latitude") is None or shop.get("longitude") is None:
+                return FALLBACK_DELIVERY_FEE
+            shop_coords.append((shop["latitude"], shop["longitude"]))
+
+        all_points = shop_coords + [customer_coords]
+        matrix = _build_matrix(all_points)
+        customer_idx = len(all_points) - 1
+        stop_indices = list(range(len(shop_coords)))
+
+        _, distance_meters = _best_route(stop_indices, matrix, customer_idx)
+        return round(calculate_delivery_cost(distance_meters, len(shop_coords)), 2)
 
     async def _validate_and_calculate(self, items, shop_id: int):
         items_to_insert = []
