@@ -28,3 +28,12 @@ class AuthController:
 
     async def update_user_profile(self, user_id: str, payload):
         return await self.auth_service.update_user_profile(user_id, payload)
+
+    async def get_all_users(self, current_user, role: str | None = None, status: str | None = None):
+        return await self.auth_service.get_all_users(current_user, role=role, status=status)
+
+    async def suspend_user_account(self, user_id: str, current_user):
+        return await self.auth_service.suspend_user_account(user_id, current_user)
+
+    async def activate_user_account(self, user_id: str, current_user):
+        return await self.auth_service.activate_user_account(user_id, current_user)

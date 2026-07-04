@@ -96,3 +96,54 @@ class AuthService:
             raise ValueError("Failed to update user profile")
 
         return response.data[0]
+
+    async def get_all_users(self, current_user, role: str | None = None, status: str | None = None):
+        if "admin" not in current_user.get("roles", []):
+            raise PermissionError("You do not have permission to view users.")
+
+        is_active = None
+        if status is not None:
+            status = status.lower()
+            if status == "active":
+                is_active = True
+            elif status == "suspended":
+                is_active = False
+            else:
+                raise ValueError("Invalid status filter. Use 'active' or 'suspended'.")
+
+        raw_users = await self.auth_repository.get_all_users(is_active=is_active)
+
+        users = []
+        for raw_user in raw_users:
+            roles = normalize_roles(raw_user.get("roles", []))
+            # Exclude admins from the results
+            if "admin" in roles:
+                continue
+            # Optional filter by role (e.g. customer, vendor, delivery)
+            if role is not None and role not in roles:
+                continue
+            users.append({
+                "id": raw_user["id"],
+                "email": raw_user["email"],
+                "phone": raw_user["phone_number"],
+                "full_name": raw_user["full_name"],
+                "roles": roles,
+                "is_active": raw_user.get("is_active", True),
+            })
+        return users
+
+    async def suspend_user_account(self, user_id: str, current_user):
+        if "admin" not in current_user.get("roles", []):
+            raise PermissionError("You do not have permission to suspend user accounts.")
+        user_to_suspend = await self.auth_repository.get_user_by_id(user_id)
+        if not user_to_suspend:
+            raise ValueError("User not found")
+        await self.auth_repository.suspend_user_account(user_id)
+
+    async def activate_user_account(self, user_id: str, current_user):
+        if "admin" not in current_user.get("roles", []):
+            raise PermissionError("You do not have permission to activate user accounts.")
+        user_to_activate = await self.auth_repository.get_user_by_id(user_id)
+        if not user_to_activate:
+            raise ValueError("User not found")
+        await self.auth_repository.activate_user_account(user_id)

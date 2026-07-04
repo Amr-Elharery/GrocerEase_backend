@@ -35,6 +35,14 @@ class UserOut(BaseModel):
 class UserProfileOut(UserOut):
     pass
 
+class UsersListItemOut(BaseModel):
+    id: str
+    email: EmailStr
+    phone: str | None = None
+    full_name: str
+    roles: list[str]
+    is_active: bool
+
 class LoginResponse(BaseModel):
     user_data: UserOut
     access_token: str

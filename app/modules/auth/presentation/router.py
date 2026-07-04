@@ -14,7 +14,8 @@ from app.modules.auth.presentation.schemas import (
     RegisterRequest,
     ResetPasswordRequest,
     UpdateProfileRequest,
-    UpdateProfileResponse
+    UpdateProfileResponse,
+    UsersListItemOut
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -116,3 +117,30 @@ async def reset_password(payload: ResetPasswordRequest, controller: AuthControll
 async def update_user_profile(payload: UpdateProfileRequest, controller: AuthController = Depends(AuthController), user = Depends(get_current_user)):
     updated_user = await controller.update_user_profile(user.get("id"), payload)
     return {"message": "User profile updated successfully", "user": updated_user}
+
+
+# Get All Users (except admins) - admin only, with optional role/status filters
+@router.get("/users", response_model=list[UsersListItemOut], status_code=status.HTTP_200_OK)
+async def get_all_users(role: str | None = None, status: str | None = None, controller: AuthController = Depends(AuthController), user = Depends(get_current_user)):
+    try:
+        return await controller.get_all_users(user, role=role, status=status)
+    except Exception as e:
+        raise AuthenticationError(str(e))
+
+# Suspend user account
+@router.post("/suspend/{user_id}", status_code=status.HTTP_200_OK)
+async def suspend_user_account(user_id: str, controller: AuthController = Depends(AuthController), user = Depends(get_current_user)):
+    try:
+        await controller.suspend_user_account(user_id, user)
+        return {"message": "User account suspended successfully"}
+    except Exception as e:
+        raise AuthenticationError(str(e))
+
+# Activate user account
+@router.post("/activate/{user_id}", status_code=status.HTTP_200_OK)
+async def activate_user_account(user_id: str, controller: AuthController = Depends(AuthController), user = Depends(get_current_user)):
+    try:
+        await controller.activate_user_account(user_id, user)
+        return {"message": "User account activated successfully"}
+    except Exception as e:
+        raise AuthenticationError(str(e))

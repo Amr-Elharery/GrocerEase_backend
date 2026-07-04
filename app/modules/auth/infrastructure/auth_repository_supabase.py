@@ -65,6 +65,24 @@ class AuthRepositorySupabase:
         """).eq("roles.role_name", role_name).execute()
         return [row["user_id"] for row in response.data if row.get("roles") and row["roles"].get("role_name") == role_name]
 
+    async def get_all_users(self, is_active: bool | None = None):
+        query = self.supabase_admin_client.from_("users").select("""
+                          id,
+                          email,
+                          phone_number,
+                          full_name,
+                          is_active,
+                          roles:users_roles(
+                            role:roles(
+                                role_name
+                            )
+                          )
+        """)
+        if is_active is not None:
+            query = query.eq("is_active", is_active)
+        response = await query.execute()
+        return response.data
+
     async def update_user_profile(self, user_id: str, profile_data: dict):
         await self.supabase_admin_client.auth.admin.update_user_by_id(
             user_id,
@@ -78,3 +96,9 @@ class AuthRepositorySupabase:
             "full_name": profile_data["full_name"],
             "phone_number": profile_data["phone_number"]
             }).eq("id", user_id).execute()
+
+    async def suspend_user_account(self, user_id: str):
+        return await self.supabase_client.from_("users").update({"is_active": False}).eq("id", user_id).execute()
+
+    async def activate_user_account(self, user_id: str):
+        return await self.supabase_client.from_("users").update({"is_active": True}).eq("id", user_id).execute()
