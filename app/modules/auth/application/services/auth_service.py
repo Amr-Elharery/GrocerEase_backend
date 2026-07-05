@@ -73,7 +73,7 @@ class AuthService:
 
     def forgot_password(self, email, platform: str = "mobile"):
         # Need confirmation #
-        redirect_url = f"{settings.WEB_URL}/reset-password" if platform == "web" else f"{settings.MOBILE_URL}reset-password"
+        redirect_url = f"{settings.WEB_URL}/auth/reset-password" if platform == "web" else f"{settings.MOBILE_URL}reset-password"
         return self.auth_repository.forgot_password(email, redirect_url)
 
     def reset_password(self, reset_data):
