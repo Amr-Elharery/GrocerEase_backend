@@ -26,7 +26,7 @@ class OrdersRepositorySupabase:
                     quantity,
                     total
                 )
-            """).eq("customer_id", customer_id).range(offset, offset + limit - 1).execute()
+            """).eq("customer_id", customer_id).order("created_at", desc=True).range(offset, offset + limit - 1).execute()
             return response.data
         except Exception as e:
             print(f"Error fetching orders: {e}")
