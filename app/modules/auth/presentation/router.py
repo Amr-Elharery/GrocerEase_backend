@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 
 from app.core.dependencies import verify_bearer_token, verify_refresh_token, get_current_user, require_roles
 
@@ -15,7 +15,8 @@ from app.modules.auth.presentation.schemas import (
     ResetPasswordRequest,
     UpdateProfileRequest,
     UpdateProfileResponse,
-    UsersListItemOut
+    UsersListItemOut,
+    PaginatedUsersOut
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -119,11 +120,18 @@ async def update_user_profile(payload: UpdateProfileRequest, controller: AuthCon
     return {"message": "User profile updated successfully", "user": updated_user}
 
 
-# Get All Users (except admins) - admin only, with optional role/status filters
-@router.get("/users", response_model=list[UsersListItemOut], status_code=status.HTTP_200_OK)
-async def get_all_users(role: str | None = None, status: str | None = None, controller: AuthController = Depends(AuthController), user = Depends(get_current_user)):
+# Get All Users (except admins) - admin only, with optional role/status filters and pagination
+@router.get("/users", response_model=PaginatedUsersOut, status_code=status.HTTP_200_OK)
+async def get_all_users(
+    role: str | None = None,
+    status: str | None = None,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=100),
+    controller: AuthController = Depends(AuthController),
+    user = Depends(get_current_user),
+):
     try:
-        return await controller.get_all_users(user, role=role, status=status)
+        return await controller.get_all_users(user, role=role, status=status, page=page, page_size=page_size)
     except Exception as e:
         raise AuthenticationError(str(e))
 

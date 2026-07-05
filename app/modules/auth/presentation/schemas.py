@@ -43,6 +43,13 @@ class UsersListItemOut(BaseModel):
     roles: list[str]
     is_active: bool
 
+class PaginatedUsersOut(BaseModel):
+    items: list[UsersListItemOut]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
+
 class LoginResponse(BaseModel):
     user_data: UserOut
     access_token: str

@@ -97,9 +97,14 @@ class AuthService:
 
         return response.data[0]
 
-    async def get_all_users(self, current_user, role: str | None = None, status: str | None = None):
+    async def get_all_users(self, current_user, role: str | None = None, status: str | None = None, page: int = 1, page_size: int = 10):
         if "admin" not in current_user.get("roles", []):
             raise PermissionError("You do not have permission to view users.")
+
+        if page < 1:
+            raise ValueError("page must be greater than or equal to 1.")
+        if page_size < 1:
+            raise ValueError("page_size must be greater than or equal to 1.")
 
         is_active = None
         if status is not None:
@@ -117,7 +122,7 @@ class AuthService:
         for raw_user in raw_users:
             roles = normalize_roles(raw_user.get("roles", []))
             # Exclude admins from the results
-            if "admin" in roles:
+            if "admin" in roles and role != "admin":
                 continue
             # Optional filter by role (e.g. customer, vendor, delivery)
             if role is not None and role not in roles:
@@ -130,7 +135,19 @@ class AuthService:
                 "roles": roles,
                 "is_active": raw_user.get("is_active", True),
             })
-        return users
+
+        total = len(users)
+        total_pages = (total + page_size - 1) // page_size
+        start = (page - 1) * page_size
+        end = start + page_size
+
+        return {
+            "items": users[start:end],
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "total_pages": total_pages,
+        }
 
     async def suspend_user_account(self, user_id: str, current_user):
         if "admin" not in current_user.get("roles", []):

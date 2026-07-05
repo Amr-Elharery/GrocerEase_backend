@@ -29,8 +29,8 @@ class AuthController:
     async def update_user_profile(self, user_id: str, payload):
         return await self.auth_service.update_user_profile(user_id, payload)
 
-    async def get_all_users(self, current_user, role: str | None = None, status: str | None = None):
-        return await self.auth_service.get_all_users(current_user, role=role, status=status)
+    async def get_all_users(self, current_user, role: str | None = None, status: str | None = None, page: int = 1, page_size: int = 10):
+        return await self.auth_service.get_all_users(current_user, role=role, status=status, page=page, page_size=page_size)
 
     async def suspend_user_account(self, user_id: str, current_user):
         return await self.auth_service.suspend_user_account(user_id, current_user)
