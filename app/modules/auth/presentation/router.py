@@ -99,12 +99,12 @@ async def change_password(payload: ChangePasswordRequest, user = Depends(get_cur
     except Exception as e:
         raise AuthenticationError(str(e))
 
-# Need test
+# Tested and working
 @router.post("/web/forgot-password", status_code=status.HTTP_200_OK)
 async def forgot_password(payload: ForgotPasswordRequest, controller: AuthController = Depends(AuthController)):
     return await controller.forgot_password(payload, platform="web")
 
-# Need test
+# Deprecated, use /web/forgot-password
 @router.post("/mobile/forgot-password", status_code=status.HTTP_200_OK)
 async def forgot_password(payload: ForgotPasswordRequest, controller: AuthController = Depends(AuthController)):
     return await controller.forgot_password(payload)
