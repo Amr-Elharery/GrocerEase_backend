@@ -40,6 +40,51 @@ class ProductsRepositorySupabase:
         print(f"Error fetching products: {e}")
         raise e
 
+    async def get_products_by_area(self, area_id: int, limit: int = 10, offset: int = 0, search: str = None):
+      try:
+        query = self.client.from_("products").select("""
+                id,
+                product_name,
+                description,
+                brand,
+                unit,
+
+                category:category_id (
+                    id,
+                    category_name
+                ),
+
+                sub_category:sub_category_id (
+                    id,
+                    category_name
+                ),
+
+                product_images (
+                    id,
+                    image_url,
+                    variant,
+                    is_primary
+                ),
+
+                shop_product!inner (
+                    shop:shop_id!inner (
+                        area_id,
+                        is_active
+                    )
+                )
+            """).eq("is_deleted", False) \
+              .eq("shop_product.is_active", True) \
+              .eq("shop_product.is_available", True) \
+              .eq("shop_product.shop.area_id", area_id) \
+              .eq("shop_product.shop.is_active", True)
+        if search:
+          query = query.or_(f"product_name.ilike.%{search}%, description.ilike.%{search}%")
+        response = await query.range(offset, offset + limit - 1).execute()
+        return response.data
+      except Exception as e:
+        print(f"Error fetching products by area: {e}")
+        raise e
+
     async def create_product(self, payload):
       try:
         response = await self.client.from_("products").insert(payload).execute()
