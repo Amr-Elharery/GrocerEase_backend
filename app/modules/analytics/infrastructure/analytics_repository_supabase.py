@@ -103,10 +103,16 @@ class AnalyticsRepositorySupabase:
             print(f"Error fetching delivery stats: {e}")
             raise e
 
-    async def get_admin_shops_by_area(self) -> list[dict]:
+    async def get_admin_shops_by_area(self, limit: int = 10, offset: int = 0) -> dict:
         try:
-            response = await self.client.from_("admin_shops_by_area").select("*").execute()
-            return response.data or []
+            response = (
+                await self.client.from_("admin_shops_by_area")
+                .select("*", count="exact")
+                .order("total_shops", desc=True)
+                .range(offset, offset + limit - 1)
+                .execute()
+            )
+            return {"items": response.data or [], "total": response.count or 0}
         except Exception as e:
             print(f"Error fetching shops by area: {e}")
             raise e

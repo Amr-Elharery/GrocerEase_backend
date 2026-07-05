@@ -91,6 +91,13 @@ class AreaShopsResponse(BaseModel):
     active_shops: int
 
 
+class PaginatedAreaShopsResponse(BaseModel):
+    items: List[AreaShopsResponse]
+    total: int
+    limit: int
+    offset: int
+
+
 class AdminDashboardResponse(BaseModel):
     platform_overview: PlatformOverviewResponse
     orders_by_status: List[OrdersByStatusResponse]
@@ -99,4 +106,4 @@ class AdminDashboardResponse(BaseModel):
     top_products: List[TopProductResponse]
     orders_by_area: List[AreaOrdersResponse]
     delivery_stats: DeliveryStatsResponse
-    shops_by_area: List[AreaShopsResponse]
+    shops_by_area: PaginatedAreaShopsResponse

@@ -24,10 +24,12 @@ async def get_shop_dashboard(
 
 @router.get("/admin", response_model=AdminDashboardResponse, status_code=status.HTTP_200_OK)
 async def get_admin_dashboard(
+    shops_by_area_limit: int = 10,
+    shops_by_area_offset: int = 0,
     controller: AnalyticsController = Depends(AnalyticsController),
     _=Depends(require_admin),
 ):
     try:
-        return await controller.get_admin_dashboard()
+        return await controller.get_admin_dashboard(shops_by_area_limit, shops_by_area_offset)
     except Exception as e:
         raise AnalyticsError(str(e))

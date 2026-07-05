@@ -12,8 +12,8 @@ class AnalyticsController:
         except Exception as e:
             raise e
 
-    async def get_admin_dashboard(self):
+    async def get_admin_dashboard(self, shops_by_area_limit: int = 10, shops_by_area_offset: int = 0):
         try:
-            return await self.service.get_admin_dashboard()
+            return await self.service.get_admin_dashboard(shops_by_area_limit, shops_by_area_offset)
         except Exception as e:
             raise e
