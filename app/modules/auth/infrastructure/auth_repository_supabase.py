@@ -13,6 +13,7 @@ class AuthRepositorySupabase:
                           email,
                           phone_number,
                           full_name,
+                          is_active,
 
                           roles:users_roles(
                             role:roles(

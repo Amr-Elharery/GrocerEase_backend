@@ -26,6 +26,8 @@ class AuthService:
         login_response = await self.auth_repository.sign_in_with_password(login_data.dict())
         user_id = login_response.user.id
         raw_user = await self.auth_repository.get_user_by_id(user_id)
+        if raw_user["is_active"] is False:
+            raise ValueError("User account is suspended. Please contact support.")
         user_data = {
             "id": raw_user["id"],
             "email": raw_user["email"],
