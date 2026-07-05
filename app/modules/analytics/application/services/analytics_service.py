@@ -36,7 +36,7 @@ class AnalyticsService:
             "customer_stats": customer_stats,
         }
 
-    async def get_admin_dashboard(self) -> dict:
+    async def get_admin_dashboard(self, shops_by_area_limit: int = 10, shops_by_area_offset: int = 0) -> dict:
         platform_overview, orders_by_status, daily_orders, top_shops, top_products, orders_by_area, delivery_stats, shops_by_area = await _gather(
             self.repository.get_admin_platform_overview(),
             self.repository.get_admin_orders_by_status(),
@@ -45,7 +45,7 @@ class AnalyticsService:
             self.repository.get_admin_top_products(),
             self.repository.get_admin_orders_by_area(),
             self.repository.get_admin_delivery_stats(),
-            self.repository.get_admin_shops_by_area(),
+            self.repository.get_admin_shops_by_area(shops_by_area_limit, shops_by_area_offset),
         )
 
         return {
@@ -56,7 +56,12 @@ class AnalyticsService:
             "top_products": top_products,
             "orders_by_area": orders_by_area,
             "delivery_stats": delivery_stats,
-            "shops_by_area": shops_by_area,
+            "shops_by_area": {
+                "items": shops_by_area["items"],
+                "total": shops_by_area["total"],
+                "limit": shops_by_area_limit,
+                "offset": shops_by_area_offset,
+            },
         }
 
 
