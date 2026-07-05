@@ -20,6 +20,11 @@ class ProductsRepositorySupabase:
                     category_name
                 ),
 
+                sub_category:sub_category_id (
+                    id,
+                    category_name
+                ),
+
                 product_images (
                     id,
                     image_url,
