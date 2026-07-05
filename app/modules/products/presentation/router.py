@@ -22,6 +22,13 @@ async def get_all_products(limit: int = 10, offset: int = 0, search: str = None 
     except Exception as e:
         raise ProductsError(str(e))
 
+@router.get("/by-area", response_model=List[ProductsResponse], status_code=status.HTTP_200_OK)
+async def get_products_by_area(area_id: int, limit: int = 10, offset: int = 0, search: str = None, controller: ProductsController = Depends(ProductsController)):
+    try:
+        return await controller.get_products_by_area(area_id, limit, offset, search)
+    except Exception as e:
+        raise ProductsError(str(e))
+
 @router.get("/{product_id}", response_model=ProductResponse, status_code=status.HTTP_200_OK)
 async def get_product(product_id: str, controller: ProductsController = Depends(ProductsController)):
     try:

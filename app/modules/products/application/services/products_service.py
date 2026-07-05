@@ -16,6 +16,12 @@ class ProductsService:
         except Exception as e:
             raise e
 
+    async def get_products_by_area(self, area_id: int, limit: int = 10, offset: int = 0, search: str = None):
+        try:
+            return await self.repository.get_products_by_area(area_id, limit, offset, search)
+        except Exception as e:
+            raise e
+
     async def create_product(self, payload, files: List[UploadFile] = None):
         try:
             created = await self.repository.create_product(payload.dict())
