@@ -18,7 +18,7 @@ class ShopProductsRepositorySupabase:
                 low_stock_threshold,
                 is_active,
                 is_available,
-                product:product_id (
+                product:product_id!inner (
                     id,
                     product_name,
                     description,
@@ -30,7 +30,7 @@ class ShopProductsRepositorySupabase:
                         is_primary
                     )
                 )
-            """).eq("shop_id", shop_id).eq("is_active", True)
+            """).eq("shop_id", shop_id).eq("is_active", True).eq("product.is_deleted", False)
             if not is_manager:
                 query = query.eq("is_available", True)
             response = await query.range(offset, offset + limit - 1).execute()
@@ -50,7 +50,7 @@ class ShopProductsRepositorySupabase:
                 low_stock_threshold,
                 is_active,
                 is_available,
-                product:product_id (
+                product:product_id!inner (
                     id,
                     product_name,
                     description,
@@ -62,7 +62,7 @@ class ShopProductsRepositorySupabase:
                         is_primary
                     )
                 )
-            """).eq("id", shop_product_id).eq("is_active", True).execute()
+            """).eq("id", shop_product_id).eq("is_active", True).eq("product.is_deleted", False).execute()
             return response.data[0] if response.data else None
         except Exception as e:
             print(f"Error fetching shop product: {e}")
@@ -132,8 +132,8 @@ class ShopProductsRepositorySupabase:
     async def get_products_for_shops(self, shop_ids: list[int]) -> list[dict]:
         try:
             response = await self.client.from_("shop_product").select(
-                "id, shop_id, product_id, price"
-            ).in_("shop_id", shop_ids).eq("is_active", True).eq("is_available", True).execute()
+                "id, shop_id, product_id, price, product:product_id!inner(is_deleted)"
+            ).in_("shop_id", shop_ids).eq("is_active", True).eq("is_available", True).eq("product.is_deleted", False).execute()
             return response.data
         except Exception as e:
             print(f"Error fetching products for shops: {e}")
