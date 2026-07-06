@@ -151,23 +151,23 @@ class AuthService:
             "total_pages": total_pages,
         }
 
-    async def get_user_by_id(self, user_id: str, current_user):
-        if "admin" not in current_user.get("roles", []) or "vendor" not in current_user.get("roles", []):
-            raise PermissionError("You do not have permission to view user details.")
+    # async def get_user_by_id(self, user_id: str, current_user):
+    #     if "admin" not in current_user.get("roles", []) or "vendor" not in current_user.get("roles", []):
+    #         raise PermissionError("You do not have permission to view user details.")
 
-        raw_user = await self.auth_repository.get_user_by_id(user_id)
-        if not raw_user:
-            raise ValueError("User not found")
+    #     raw_user = await self.auth_repository.get_user_by_id(user_id)
+    #     if not raw_user:
+    #         raise ValueError("User not found")
 
-        roles = normalize_roles(raw_user.get("roles", []))
-        return {
-            "id": raw_user["id"],
-            "email": raw_user["email"],
-            "phone": raw_user["phone_number"],
-            "full_name": raw_user["full_name"],
-            "roles": roles,
-            "is_active": raw_user.get("is_active", True),
-        }
+    #     roles = normalize_roles(raw_user.get("roles", []))
+    #     return {
+    #         "id": raw_user["id"],
+    #         "email": raw_user["email"],
+    #         "phone": raw_user["phone_number"],
+    #         "full_name": raw_user["full_name"],
+    #         "roles": roles,
+    #         "is_active": raw_user.get("is_active", True),
+    #     }
 
     async def suspend_user_account(self, user_id: str, current_user):
         if "admin" not in current_user.get("roles", []):

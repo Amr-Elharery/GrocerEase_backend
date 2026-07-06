@@ -135,12 +135,12 @@ async def get_all_users(
     except Exception as e:
         raise AuthenticationError(str(e))
 
-@router.get("/users/{user_id}", response_model=UsersListItemOut, status_code=status.HTTP_200_OK)
-async def get_user_by_id(user_id: str, controller: AuthController = Depends(AuthController), user = Depends(get_current_user)):
-    try:
-        return await controller.get_user_by_id(user_id, user)
-    except Exception as e:
-        raise AuthenticationError(str(e))
+# @router.get("/users/{user_id}", response_model=UsersListItemOut, status_code=status.HTTP_200_OK)
+# async def get_user_by_id(user_id: str, controller: AuthController = Depends(AuthController), user = Depends(get_current_user)):
+#     try:
+#         return await controller.get_user_by_id(user_id, user)
+#     except Exception as e:
+#         raise AuthenticationError(str(e))
 
 # Suspend user account
 @router.post("/suspend/{user_id}", status_code=status.HTTP_200_OK)
