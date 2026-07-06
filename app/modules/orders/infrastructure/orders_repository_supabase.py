@@ -188,7 +188,12 @@ class OrdersRepositorySupabase:
                     id,
                     shop_product_id,
                     quantity,
-                    total
+                    total,
+                    shop_product:shop_product_id (
+                        product:product_id (
+                            product_name
+                        )
+                    )
                 ),
                 customer_address:customer_address_id (
                     id,

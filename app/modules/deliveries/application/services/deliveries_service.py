@@ -83,7 +83,7 @@ class DeliveriesService:
                     continue
             delivery = await self.repository.get_delivery_by_order(order["id"])
             if not delivery:
-                unassigned.append(order)
+                unassigned.append(_format_order_for_delivery(order))
 
         singles = []
         groups: dict[int, list] = {}
@@ -235,3 +235,19 @@ class DeliveriesService:
                 )
             except Exception:
                 pass
+
+
+def _format_order_for_delivery(order: dict) -> dict:
+    for item in order.get("order_items") or []:
+        shop_product = item.pop("shop_product", None) or {}
+        product = shop_product.get("product") or {}
+        item["product_name"] = product.get("product_name")
+        if item.get("total") is not None:
+            item["total"] = round(item["total"], 2)
+
+    if order.get("subtotal") is not None:
+        order["subtotal"] = round(order["subtotal"], 2)
+    if order.get("delivery_fee") is not None:
+        order["delivery_fee"] = round(order["delivery_fee"], 2)
+
+    return order
