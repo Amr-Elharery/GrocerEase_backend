@@ -27,10 +27,12 @@ class OrderItemResponse(BaseModel):
     quantity: float
     total: float
 
+class CustomerResponse(BaseModel):
+    full_name: str
 
 class OrderResponse(BaseModel):
     id: int
-    customer_id: str
+    customer_name: CustomerResponse
     shop_id: int
     order_group_id: int | None = None
     status: str

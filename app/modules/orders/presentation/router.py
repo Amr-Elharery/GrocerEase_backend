@@ -14,7 +14,7 @@ router = APIRouter(prefix="/orders", tags=["orders"])
 
 
 @router.get("/admin/all", response_model=List[OrderResponse], status_code=status.HTTP_200_OK)
-async def get_all_orders_admin(limit: int = 10, offset: int = 0, controller: OrdersController = Depends(OrdersController), _=Depends(require_admin)):
+async def get_all_orders_admin(limit: int = 10, offset: int = 0, controller: OrdersController = Depends(OrdersController), _=Depends(require_roles(["admin"]))):
     try:
         return await controller.get_all_orders_admin(limit, offset)
     except Exception as e:

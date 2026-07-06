@@ -223,7 +223,6 @@ class OrdersRepositorySupabase:
         try:
             response = await self.client.from_("orders").select("""
                 id,
-                customer_id,
                 shop_id,
                 order_group_id,
                 status,
@@ -237,6 +236,9 @@ class OrdersRepositorySupabase:
                     shop_product_id,
                     quantity,
                     total
+                ),
+                customer_name:customer_id (
+                    full_name
                 )
             """).order("created_at", desc=True).range(offset, offset + limit - 1).execute()
             return response.data
@@ -248,7 +250,6 @@ class OrdersRepositorySupabase:
         try:
             response = await self.client.from_("orders").select("""
                 id,
-                customer_id,
                 shop_id,
                 order_group_id,
                 status,
@@ -262,6 +263,9 @@ class OrdersRepositorySupabase:
                     shop_product_id,
                     quantity,
                     total
+                ),
+                customer_name:customer_id (
+                    full_name
                 )
             """).eq("shop_id", shop_id).order("created_at", desc=True).range(offset, offset + limit - 1).execute()
             return response.data
