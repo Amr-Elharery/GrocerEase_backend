@@ -1,10 +1,11 @@
 from supabase import AsyncClient
 from fastapi import Depends
-from app.db.supabase_client import get_admin_client
+from app.db.supabase_client import get_admin_client, get_anon_client
 
 class AuthRepositorySupabase:
-    def __init__(self, supabase_client: AsyncClient = Depends(get_admin_client)) -> None:
+    def __init__(self, supabase_client: AsyncClient = Depends(get_anon_client), supabase_admin_client: AsyncClient = Depends(get_admin_client)) -> None:
         self.supabase_client = supabase_client
+        self.supabase_admin_client = supabase_admin_client
 
     async def get_user_by_id(self, user_id: str):
         response = await self.supabase_client.from_("users").select("""
@@ -12,6 +13,7 @@ class AuthRepositorySupabase:
                           email,
                           phone_number,
                           full_name,
+                          is_active,
 
                           roles:users_roles(
                             role:roles(
@@ -33,17 +35,71 @@ class AuthRepositorySupabase:
         return response
 
     async def sign_in_with_password(self, login_data):
-      response = await self.supabase_client.auth.sign_in_with_password(login_data)
-      return response.user.id
+        response = await self.supabase_client.auth.sign_in_with_password(login_data)
+        return response
 
     async def sign_out(self):
         response = await self.supabase_client.auth.sign_out()
         return response
 
-    # async def forgot_password(self, email: str):
-    #     response = await self.supabase_client.auth.api.reset_password_for_email(email)
-    #     return response
+    async def change_password(self, user_id: str, new_password: str):
+        response = await self.supabase_admin_client.auth.admin.update_user_by_id(user_id, {"password": new_password})
+        return response
 
-    # async def reset_password(self, access_token: str, new_password: str):
-    #     response = await self.supabase_client.auth.api.update_user(access_token=access_token, password=new_password)
-    #     return response
+    async def forgot_password(self, email: str, redirect_url: str):
+        response = await self.supabase_client.auth.reset_password_email(email, {
+            "redirect_to": redirect_url
+        })
+        return response
+
+    async def reset_password(self, access_token: str, refresh_token: str, new_password: str):
+        await self.supabase_client.auth.set_session(access_token, refresh_token)
+        response = await self.supabase_client.auth.update_user({"password": new_password})
+        return response
+
+    async def get_users_by_role(self, role_name: str):
+        response = await self.supabase_admin_client.from_("users_roles").select("""
+            user_id,
+            roles:role_id (
+                role_name
+            )
+        """).eq("roles.role_name", role_name).execute()
+        return [row["user_id"] for row in response.data if row.get("roles") and row["roles"].get("role_name") == role_name]
+
+    async def get_all_users(self, is_active: bool | None = None):
+        query = self.supabase_admin_client.from_("users").select("""
+                          id,
+                          email,
+                          phone_number,
+                          full_name,
+                          is_active,
+                          roles:users_roles(
+                            role:roles(
+                                role_name
+                            )
+                          )
+        """)
+        if is_active is not None:
+            query = query.eq("is_active", is_active)
+        response = await query.execute()
+        return response.data
+
+    async def update_user_profile(self, user_id: str, profile_data: dict):
+        await self.supabase_admin_client.auth.admin.update_user_by_id(
+            user_id,
+            {
+                "user_metadata": {
+                    "full_name": profile_data["full_name"],
+                    "phone": profile_data["phone_number"]
+                    }
+            })
+        await self.supabase_client.from_("users").update({
+            "full_name": profile_data["full_name"],
+            "phone_number": profile_data["phone_number"]
+            }).eq("id", user_id).execute()
+
+    async def suspend_user_account(self, user_id: str):
+        return await self.supabase_client.from_("users").update({"is_active": False}).eq("id", user_id).execute()
+
+    async def activate_user_account(self, user_id: str):
+        return await self.supabase_client.from_("users").update({"is_active": True}).eq("id", user_id).execute()

@@ -16,6 +16,11 @@ class Settings(BaseSettings):
     JWT_SECRET_KEY: str
     JWT_ALGORITHM: str
 
+    WEB_URL: str
+    MOBILE_URL: str
+
+    ORS_API_KEY: str
+
     @property
     def is_development(self) -> bool:
         return self.APP_ENV == "development"

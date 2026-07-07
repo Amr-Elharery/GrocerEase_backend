@@ -43,8 +43,28 @@ class CategoryResponse(BaseModel):
 class SubCategoryResponse(BaseModel):
     id: int | None = None
     category_name: str | None = None
+
+class ProductsResponse(ProductBase):
+    id: int
+    category: CategoryResponse
+    sub_category: SubCategoryResponse | None = None
+    product_images: List[ProductImageResponse]
+
+class shopResponse(BaseModel):
+    id: int | None = None
+    shop_name: str | None = None
+    logo_url: str | None = None
+
+class ShopProductResponse(BaseModel):
+    available_stock: int | None = None
+    price: float | None = None
+    is_active: bool | None = None
+    is_available: bool | None = None
+    shop: shopResponse | None = None
+
 class ProductResponse(ProductBase):
     id: int
     category: CategoryResponse
     sub_category: SubCategoryResponse | None = None
     product_images: List[ProductImageResponse]
+    shops: List[ShopProductResponse] | None = None
