@@ -43,9 +43,21 @@ class OrderResponse(BaseModel):
     customer_address_id: int
     order_items: List[OrderItemResponse] | None = None
 
+class OrderResponseWithCustomerId(BaseModel):
+    id: int
+    customer_id: str
+    shop_id: int
+    order_group_id: int | None = None
+    status: str
+    subtotal: float
+    delivery_fee: float
+    payment_method: str
+    created_at: datetime | None = None
+    customer_address_id: int
+    order_items: List[OrderItemResponse] | None = None
 
 class OrderGroupResponse(BaseModel):
     id: int
     customer_id: str
     created_at: datetime | None = None
-    orders: List[OrderResponse] | None = None
+    orders: List[OrderResponseWithCustomerId] | None = None

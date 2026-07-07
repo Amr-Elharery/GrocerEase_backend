@@ -6,6 +6,7 @@ from app.modules.orders.presentation.schemas import (
     CreateOrderRequest,
     CreateOptimizationOrderRequest,
     OrderResponse,
+    OrderResponseWithCustomerId,
     OrderGroupResponse,
 )
 from app.modules.orders.domain.errors import OrdersError
@@ -30,7 +31,7 @@ async def get_shop_orders(limit: int = 10, offset: int = 0, controller: OrdersCo
         raise OrdersError(str(e))
 
 
-@router.get("/", response_model=List[OrderResponse], status_code=status.HTTP_200_OK)
+@router.get("/", response_model=List[OrderResponseWithCustomerId], status_code=status.HTTP_200_OK)
 async def get_all_orders(limit: int = 10, offset: int = 0, controller: OrdersController = Depends(OrdersController), current_user=Depends(get_current_user)):
     try:
         customer_id = current_user.get("id")
@@ -48,7 +49,7 @@ async def get_order_group(order_group_id: int, controller: OrdersController = De
         raise OrdersError(str(e))
 
 
-@router.get("/{order_id}", response_model=OrderResponse, status_code=status.HTTP_200_OK)
+@router.get("/{order_id}", response_model=OrderResponseWithCustomerId, status_code=status.HTTP_200_OK)
 async def get_order(order_id: int, controller: OrdersController = Depends(OrdersController), current_user=Depends(get_current_user)):
     try:
         return await controller.get_order(order_id, current_user)
@@ -56,7 +57,7 @@ async def get_order(order_id: int, controller: OrdersController = Depends(Orders
         raise OrdersError(str(e))
 
 
-@router.post("/", response_model=OrderResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=OrderResponseWithCustomerId, status_code=status.HTTP_201_CREATED)
 async def create_order(payload: CreateOrderRequest, controller: OrdersController = Depends(OrdersController), current_user=Depends(get_current_user)):
     try:
         customer_id = current_user.get("id")
@@ -74,7 +75,7 @@ async def create_optimization_order(payload: CreateOptimizationOrderRequest, con
         raise OrdersError(str(e))
 
 
-@router.patch("/{order_id}/cancel", response_model=OrderResponse, status_code=status.HTTP_200_OK)
+@router.patch("/{order_id}/cancel", response_model=OrderResponseWithCustomerId, status_code=status.HTTP_200_OK)
 async def cancel_order(order_id: int, controller: OrdersController = Depends(OrdersController), current_user=Depends(get_current_user)):
     try:
         customer_id = current_user.get("id")
@@ -83,7 +84,7 @@ async def cancel_order(order_id: int, controller: OrdersController = Depends(Ord
         raise OrdersError(str(e))
 
 
-@router.patch("/{order_id}/status", response_model=OrderResponse, status_code=status.HTTP_200_OK)
+@router.patch("/{order_id}/status", response_model=OrderResponseWithCustomerId, status_code=status.HTTP_200_OK)
 async def update_order_status(order_id: int, new_status: str, controller: OrdersController = Depends(OrdersController), _=Depends(require_roles(["admin"]))):
     try:
         return await controller.update_order_status(order_id, new_status)
