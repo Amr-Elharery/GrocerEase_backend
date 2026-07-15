@@ -8,6 +8,7 @@ class OrdersError(AppException):
 
 class OrderNotFoundError(AppException):
     def __init__(self) -> None:
+        
         super().__init__("Order not found", status.HTTP_404_NOT_FOUND)
 
 class OrderGroupNotFoundError(AppException):
